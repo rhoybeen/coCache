@@ -23,11 +23,10 @@
  * SOFTWARE.
  */
 
-package mec.cache.web;
+package mec.cache.controller;
 
-import mec.cache.EchoService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import mec.cache.service.EchoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -41,11 +40,9 @@ import java.util.Locale;
 /**
  * Handles requests for the application home page.
  */
+@Slf4j
 @Controller
 public class HomeController {
-
-    private static final Logger logger = LoggerFactory
-            .getLogger(HomeController.class);
 
     @Autowired
     private EchoService echoService = null;
@@ -58,8 +55,6 @@ public class HomeController {
      */
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String home(Locale locale, Model model) {
-        logger.info("Welcome home! the client locale is " + locale.toString());
-
         Date date = new Date();
         DateFormat dateFormat =
                 DateFormat.getDateTimeInstance(DateFormat.LONG,
@@ -74,7 +69,6 @@ public class HomeController {
          * We'll put some stuff here to test the c:forEach tag.
          */
         model.addAttribute("someItems", new String[] { "one", "two", "three" });
-
         return "home";
     }
 

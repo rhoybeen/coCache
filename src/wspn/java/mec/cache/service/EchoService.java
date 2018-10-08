@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package mec.cache;
+package mec.cache.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +43,8 @@ public class EchoService {
         /**
          * This is here to detect if we get instantiated 2x.  While starting
          * with SpringMVC with Jetty embedded I found that I could get into
-         * a case where the web application would recreate all the beans
-         * already created outside of the web app context.  The component
+         * a case where the controller application would recreate all the beans
+         * already created outside of the controller app context.  The component
          * scan filters should prevent this.
          */
         if (instance != null) {

@@ -1,9 +1,10 @@
-package mec.cache.web;
+package mec.cache.controller;
 
-import groovy.util.logging.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 @Slf4j
@@ -18,4 +19,12 @@ public class ConsoleController {
         modelAndView.setViewName(VIEW);
         return modelAndView;
     }
+
+    @ResponseBody
+    @RequestMapping("/nodes")
+    public String getSystemNodes(){
+        log.info("Get system nodes");
+        return null;
+    }
+
 }

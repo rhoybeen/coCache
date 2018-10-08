@@ -72,7 +72,7 @@ public class JettyConfiguration {
         ctx.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed",
                 "false");
 
-        /* Create the root web application context and set it as a servlet
+        /* Create the root controller application context and set it as a servlet
          * attribute so the dispatcher servlet can find it. */
         GenericWebApplicationContext webApplicationContext =
                 new GenericWebApplicationContext();
