@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package ca.unx.template.config;
+package mec.cache.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;

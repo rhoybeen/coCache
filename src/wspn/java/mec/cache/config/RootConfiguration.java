@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package ca.unx.template.config;
+package mec.cache.config;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;

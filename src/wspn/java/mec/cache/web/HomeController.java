@@ -23,9 +23,9 @@
  * SOFTWARE.
  */
 
-package ca.unx.template.web;
+package mec.cache.web;
 
-import ca.unx.template.EchoService;
+import mec.cache.EchoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

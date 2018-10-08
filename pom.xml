@@ -15,6 +15,7 @@
     <springframework.version>4.0.3.RELEASE</springframework.version>
     <springsecurity.version>3.2.3.RELEASE</springsecurity.version>
     <slf4j.version>1.7.7</slf4j.version>
+    <lombok.version>1.18.2</lombok.version>
     <logback.version>1.1.2</logback.version>
     <codahale.metrics.version>3.0.1</codahale.metrics.version>
     <jetty.version>9.1.4.v20140401</jetty.version>
@@ -23,7 +24,20 @@
 
   <dependencies>
 
-    <!-- Spring -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>1.2.49</version>
+    </dependency>
+
+      <!-- Spring -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
@@ -161,7 +175,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2.1</version>
         <configuration>
-          <mainClass>ca.unx.template.Main</mainClass>
+          <mainClass>mec.cache.Main</mainClass>
         </configuration>
       </plugin>
 
@@ -180,9 +194,9 @@
               <goal>jspc</goal>
             </goals>
             <configuration>
-              <webAppSourceDirectory>${basedir}/src/main/resources/webapp
+              <webAppSourceDirectory>${basedir}/src/wspn/resources/webapp
               </webAppSourceDirectory>
-              <webXml>${basedir}/src/main/resources/webapp/WEB-INF/web.xml
+              <webXml>${basedir}/src/wspn/resources/webapp/WEB-INF/web.xml
               </webXml>
               <webXmlFragment>
                 ${basedir}/target/classes/webapp/WEB-INF/web.xml-frag
@@ -203,7 +217,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib</classpathPrefix>
-              <mainClass>ca.unx.template.Main</mainClass>
+              <mainClass>mec.cache.Main</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -291,7 +305,7 @@
                       implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer
                       implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>ca.unx.template.Main</mainClass>
+                      <mainClass>mec.cache.Main</mainClass>
                     </transformer>
 
                     <!-- Files that need to be merged. -->

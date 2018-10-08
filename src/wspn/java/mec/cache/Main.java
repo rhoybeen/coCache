@@ -23,9 +23,9 @@
  * SOFTWARE.
  */
 
-package ca.unx.template;
+package mec.cache;
 
-import ca.unx.template.config.RootConfiguration;
+import mec.cache.config.RootConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
