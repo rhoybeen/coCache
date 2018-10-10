@@ -1,14 +1,20 @@
 package ca.unx.template.service;
 
-import groovy.util.logging.Slf4j;
+import ca.unx.template.Utils.HttpUtils;
+import ca.unx.template.model.NodeType;
+import ca.unx.template.model.RequestEntity;
+import ca.unx.template.model.ResponseEntity;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.stereotype.Service;
 
+import java.io.DataOutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -16,35 +22,59 @@ import java.util.Set;
 /**
  * Define controller client operations here. Each client is a cache server that provides VOD services
  */
-@Slf4j
 @Getter
 @Setter
+@Slf4j
 public class WebClient {
 
+    //Cache
     private static final int DEFAULT_CAPACITY = 30;
 
     @Value("${slave.ip}")
     private String ip;
 
-//    private final String id;
-//    private final NodeType nodeType;
-//    private final String name;
-//    private final String parentId;
-//    private final int capacity;
+    @Value("${slave.id}")
+    private String id;
+
+    @Value("${slave.type}")
+    private NodeType nodeType;
+
+    @Value("${slave.name}")
+    private String name;
+
+    @Value("${slave.parentId}")
+    private String parentId;
+
+    @Value("${slave.capacity}")
+    private int capacity;
+
+    @JSONField(serialize = false)
+    @Value("${slave.masterIp}")
+    private String masterIp;
 
     //Map indicating resources clicks.
-    private final Map<String,Integer> counters = new HashMap<String,Integer>();
+    private final Map<String, Integer> counters = new HashMap<String, Integer>();
     //Map indicating which node resources locate.
-    private final Map<String,Set<String>> resourceMap = new HashMap<>();
+    private final Map<String, Set<String>> resourceMap = new HashMap<>();
     //Map indicating delays between itself and the other nodes.
-    private final Map<String,Integer> delayMap = new HashMap<String, Integer>();
+    private final Map<String, Integer> delayMap = new HashMap<String, Integer>();
 
-//    public WebClient(String id, String ip,String name,NodeType nodeType,String parentId){
-//        this.id = id;
-//        this.ip = ip;
-//        this.name = name;
-//        this.nodeType = nodeType;
-//        this.parentId = parentId;
-//        this.capacity = DEFAULT_CAPACITY;
-//    }
+    /**
+     * Bind web client to cache-control(master) server. It's a multi-to-one relationship.
+     */
+    public void bind() {
+        log.info("WebClient" + this.id + " bind to master server");
+        final RequestEntity request = RequestEntity.builder()
+                .type("BIND")
+                .params(this)
+                .build();
+        try{
+            final String responseStr = HttpUtils.sendHttpRequest(masterIp,request);
+            final JSONObject response = JSONObject.parseObject(responseStr);
+        }catch (Exception e){
+            log.warn("WebClient "+ this.id + "fails to bind master server.");
+            e.printStackTrace();
+        }
+    }
+
 }
