@@ -18,11 +18,11 @@ public class HttpUtils {
     private static final int CONNECTION_TIME_OUT = 2000;
     private static final int READ_TIME_OUT = 5000;
 
-    public static String sendHttpRequest(String dst_ip, RequestEntity request) throws Exception {
-        final URL url = new URL(dst_ip);
+    public static String sendHttpRequest(String dst_url, RequestEntity request) throws Exception {
+        final URL url = new URL(dst_url);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
-        connection.setRequestMethod("GET");
+        connection.setRequestMethod("POST");
         connection.setConnectTimeout(CONNECTION_TIME_OUT);
         connection.setReadTimeout(READ_TIME_OUT);
         connection.setRequestProperty("Charset", "UTF-8");
@@ -37,7 +37,7 @@ public class HttpUtils {
         dataOutputStream.close();
 
         if(connection.getResponseCode() == 200){
-            log.info("Get 200 response code from server" + dst_ip);
+            log.info("Get 200 response code from server" + dst_url);
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             String inputLine;
             StringBuffer content = new StringBuffer();
@@ -48,7 +48,7 @@ public class HttpUtils {
             connection.disconnect();
             return content.toString();
         }else {
-            log.warn("HTTP response failure ip" + dst_ip);
+            log.warn("HTTP response failure ip" + dst_url);
             throw new Exception("HTTP response failure");
         }
     }

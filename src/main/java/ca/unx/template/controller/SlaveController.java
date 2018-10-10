@@ -25,6 +25,6 @@ public class SlaveController {
     @ResponseBody
     @RequestMapping(value = "/info")
     public String getSlaveIndo(){
-        return JSONObject.toJSONString(webClient);
+        return webClient.bind();
     }
 }

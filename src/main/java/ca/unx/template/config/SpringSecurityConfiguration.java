@@ -31,6 +31,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 
 @Configuration
 @EnableWebSecurity
@@ -52,6 +53,7 @@ public class SpringSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .anyRequest().permitAll();
 
         http.formLogin().and().httpBasic();
+        http.csrf().disable();
     }
 
 }

@@ -62,18 +62,21 @@ public class WebClient {
     /**
      * Bind web client to cache-control(master) server. It's a multi-to-one relationship.
      */
-    public void bind() {
-        log.info("WebClient" + this.id + " bind to master server");
+    public String bind() {
         final RequestEntity request = RequestEntity.builder()
                 .type("BIND")
                 .params(this)
                 .build();
         try{
-            final String responseStr = HttpUtils.sendHttpRequest(masterIp,request);
-            final JSONObject response = JSONObject.parseObject(responseStr);
+            final String url = "http://" + masterIp + "/cache/bind";
+            log.info("WebClient" + this.id + " bind to master server " + url);
+            final String responseStr = HttpUtils.sendHttpRequest(url,request);
+//            final JSONObject response = JSONObject.parseObject(responseStr);
+            return responseStr;
         }catch (Exception e){
             log.warn("WebClient "+ this.id + "fails to bind master server.");
             e.printStackTrace();
+            return "error occurs";
         }
     }
 
