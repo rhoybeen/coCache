@@ -23,12 +23,10 @@
  * SOFTWARE.
  */
 
-package ca.unx.template.web;
+package ca.unx.template.controller;
 
-import ca.unx.template.EchoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,9 +45,6 @@ public class HomeController {
     private static final Logger logger = LoggerFactory
             .getLogger(HomeController.class);
 
-    @Autowired
-    private EchoService echoService = null;
-
     /**
      * Simple controller for "/" that returns a JSP view.
      *
@@ -58,7 +53,6 @@ public class HomeController {
      */
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String home(Locale locale, Model model) {
-        logger.info("Welcome home! the client locale is " + locale.toString());
 
         Date date = new Date();
         DateFormat dateFormat =
@@ -67,7 +61,6 @@ public class HomeController {
 
         String formattedDate = dateFormat.format(date);
         model.addAttribute("serverTime", formattedDate);
-        model.addAttribute("echoService", echoService);
 
         /*
          * When using embedded Jetty there can be issues with JSP tag libraries.

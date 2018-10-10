@@ -44,7 +44,7 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 public class Main {
 
     /**
-     * Flag that will be set to true when the web application context
+     * Flag that will be set to true when the controller application context
      * (SpringMVC) is refreshed.
      */
     static boolean webApplicationContextInitialized = false;
@@ -62,9 +62,9 @@ public class Main {
              * context, and so it can end up failing but our application will
              * keep running.
              * 
-             * To detect the case where the SpringMVC's web application context
+             * To detect the case where the SpringMVC's controller application context
              * fails we'll listen for ContextRefreshEvents and set a flag when
-             * we see the web application context refresh.
+             * we see the controller application context refresh.
              */
             applicationContext
                     .addApplicationListener(
@@ -85,7 +85,7 @@ public class Main {
             applicationContext.refresh();
 
             if (!webApplicationContextInitialized) {
-                logger.error("Failed to initialize web application.  Exiting.");
+                logger.error("Failed to initialize controller application.  Exiting.");
                 System.exit(1);
             }
 

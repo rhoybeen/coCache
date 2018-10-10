@@ -47,7 +47,9 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
  */
 @EnableWebMvc
 @Configuration
-@ComponentScan(useDefaultFilters = false, basePackages = {"ca.unx.template"},
+@ComponentScan(
+        useDefaultFilters = false,
+        basePackages = {"ca.unx.template"},
         includeFilters = {@ComponentScan.Filter(Controller.class)})
 public class MvcConfiguration extends WebMvcConfigurerAdapter {
 

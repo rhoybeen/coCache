@@ -6,3 +6,4 @@ spring-app-embedded-jetty-mvc.iml
 .project
 .settings
 jetty-springmvc-jsp-template.iml
+.DS_Store

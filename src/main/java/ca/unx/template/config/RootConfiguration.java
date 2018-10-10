@@ -25,12 +25,14 @@
 
 package ca.unx.template.config;
 
+import ca.unx.template.service.WebClient;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.stereotype.Controller;
 
@@ -45,9 +47,10 @@ import org.springframework.stereotype.Controller;
  */
 @Configuration
 @Import({JettyConfiguration.class, SpringSecurityConfiguration.class})
-@ComponentScan(basePackages = {"ca.unx.template"},
-        excludeFilters = {@ComponentScan.Filter(Controller.class),
-                @ComponentScan.Filter(Configuration.class)})
+@PropertySource(value = {"classpath:slave.properties"})
+@ComponentScan(
+        basePackages = {"ca.unx.template"},
+        excludeFilters = {@ComponentScan.Filter(Controller.class), @ComponentScan.Filter(Configuration.class)})
 public class RootConfiguration {
 
     /**
@@ -73,4 +76,10 @@ public class RootConfiguration {
     public HealthCheckRegistry healthCheckRegistry() {
         return new HealthCheckRegistry();
     }
+
+    @Bean
+    public WebClient getWebClient() {
+        return new WebClient();
+    }
+
 }

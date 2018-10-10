@@ -1,4 +1,4 @@
-package ca.unx.template.web;
+package ca.unx.template.controller;
 
 import groovy.util.logging.Slf4j;
 import org.springframework.stereotype.Controller;

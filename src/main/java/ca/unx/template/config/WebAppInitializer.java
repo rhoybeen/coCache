@@ -53,7 +53,7 @@ public class WebAppInitializer extends
     }
 
     /**
-     * Set the application context for the Spring MVC web tier.
+     * Set the application context for the Spring MVC controller tier.
      *
      * @See {@link AbstractAnnotationConfigDispatcherServletInitializer}
      */
@@ -95,7 +95,7 @@ public class WebAppInitializer extends
         try {
             onStartup(servletContextEvent.getServletContext());
         } catch (ServletException e) {
-            logger.error("Failed to initialize web application", e);
+            logger.error("Failed to initialize controller application", e);
             System.exit(0);
         }
     }
