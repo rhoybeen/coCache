@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package ca.unx.template.config;
+package bupt.wspn.cache.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 @Configuration
 @ComponentScan(
         useDefaultFilters = false,
-        basePackages = {"ca.unx.template"},
+        basePackages = {"bupt.wspn.cache"},
         includeFilters = {@ComponentScan.Filter(Controller.class)})
 public class MvcConfiguration extends WebMvcConfigurerAdapter {
 

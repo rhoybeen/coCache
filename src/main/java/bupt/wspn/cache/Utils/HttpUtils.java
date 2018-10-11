@@ -1,6 +1,6 @@
-package ca.unx.template.Utils;
+package bupt.wspn.cache.Utils;
 
-import ca.unx.template.model.RequestEntity;
+import bupt.wspn.cache.model.RequestEntity;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;

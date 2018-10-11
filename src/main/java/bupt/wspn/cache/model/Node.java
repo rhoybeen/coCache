@@ -1,4 +1,4 @@
-package ca.unx.template.model;
+package bupt.wspn.cache.model;
 
 import lombok.Builder;
 import lombok.Data;

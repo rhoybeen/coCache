@@ -1,6 +1,6 @@
-package ca.unx.template.service;
+package bupt.wspn.cache.service;
 
-import ca.unx.template.model.Node;
+import bupt.wspn.cache.model.Node;
 import groovy.util.logging.Slf4j;
 import org.springframework.stereotype.Service;
 

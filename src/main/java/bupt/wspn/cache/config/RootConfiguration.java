@@ -23,9 +23,9 @@
  * SOFTWARE.
  */
 
-package ca.unx.template.config;
+package bupt.wspn.cache.config;
 
-import ca.unx.template.service.WebClient;
+import bupt.wspn.cache.service.WebClient;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +49,7 @@ import org.springframework.stereotype.Controller;
 @Import({JettyConfiguration.class, SpringSecurityConfiguration.class})
 @PropertySource(value = {"classpath:slave.properties"})
 @ComponentScan(
-        basePackages = {"ca.unx.template"},
+        basePackages = {"bupt.wspn.cache"},
         excludeFilters = {@ComponentScan.Filter(Controller.class), @ComponentScan.Filter(Configuration.class)})
 public class RootConfiguration {
 

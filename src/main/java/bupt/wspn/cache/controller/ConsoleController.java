@@ -1,4 +1,4 @@
-package ca.unx.template.controller;
+package bupt.wspn.cache.controller;
 
 import groovy.util.logging.Slf4j;
 import org.springframework.stereotype.Controller;

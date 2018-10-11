@@ -1,20 +1,14 @@
-package ca.unx.template.service;
+package bupt.wspn.cache.service;
 
-import ca.unx.template.Utils.HttpUtils;
-import ca.unx.template.model.NodeType;
-import ca.unx.template.model.RequestEntity;
-import ca.unx.template.model.ResponseEntity;
-import com.alibaba.fastjson.JSONObject;
+import bupt.wspn.cache.Utils.HttpUtils;
+import bupt.wspn.cache.model.NodeType;
+import bupt.wspn.cache.model.RequestEntity;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
-import java.io.DataOutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

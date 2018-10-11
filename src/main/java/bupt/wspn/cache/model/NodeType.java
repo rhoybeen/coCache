@@ -1,4 +1,4 @@
-package ca.unx.template.model;
+package bupt.wspn.cache.model;
 
 public enum NodeType {
     SBS_MEC,

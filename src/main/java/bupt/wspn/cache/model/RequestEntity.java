@@ -1,4 +1,4 @@
-package ca.unx.template.model;
+package bupt.wspn.cache.model;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Builder;

@@ -23,9 +23,9 @@
  * SOFTWARE.
  */
 
-package ca.unx.template;
+package bupt.wspn.cache;
 
-import ca.unx.template.config.RootConfiguration;
+import bupt.wspn.cache.config.RootConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
