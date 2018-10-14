@@ -35,7 +35,7 @@ public class HttpUtils {
         dataOutputStream.write(request.toJSONString().getBytes());
         dataOutputStream.flush();
         dataOutputStream.close();
-
+        log.info("send http request to url:"+dst_url);
         if(connection.getResponseCode() == 200){
             log.info("Get 200 response code from server" + dst_url);
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));

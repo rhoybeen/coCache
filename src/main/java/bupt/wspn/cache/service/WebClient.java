@@ -4,12 +4,14 @@ import bupt.wspn.cache.Utils.HttpUtils;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 /**
@@ -19,9 +21,6 @@ import java.util.*;
 @Setter
 @Slf4j
 public class WebClient {
-
-    //Cache
-    private static final int DEFAULT_CAPACITY = 30;
 
     @Value("${slave.ip}")
     private String ip;
@@ -41,6 +40,9 @@ public class WebClient {
     @Value("${slave.capacity}")
     private int capacity;
 
+    @Value("${slave.resourceAmount}")
+    private int resourceAmount;
+
     @JSONField(serialize = false)
     @Value("${slave.masterIp}")
     private String masterIp;
@@ -52,8 +54,10 @@ public class WebClient {
     //Map indicating delays between itself and the other nodes.
     private final Map<String, Integer> delayMap = new HashMap<String, Integer>();
 
-    //provide sortde video list.
-    private List<Video> resources = new ArrayList<Video>();
+    //provide sorted video list.
+    private final List<Video> resources = new ArrayList<Video>();
+
+    private List<Video> tmp = new ArrayList<>();
 
     /**
      * Bind web client to cache-control(master) server. It's a multi-to-one relationship.
@@ -63,33 +67,33 @@ public class WebClient {
                 .type("BIND")
                 .params(this)
                 .build();
-        try{
+        try {
             final String url = "http://" + masterIp + "/cache/bind";
             log.info("WebClient" + this.id + " bind to master server " + url);
-            final String responseStr = HttpUtils.sendHttpRequest(url,request);
+            final String responseStr = HttpUtils.sendHttpRequest(url, request);
             return responseStr;
-        }catch (Exception e){
-            log.warn("WebClient "+ this.id + "fails to bind master server.");
+        } catch (Exception e) {
+            log.warn("WebClient " + this.id + "fails to bind master server.");
             e.printStackTrace();
             return "error occurs";
         }
     }
 
-    public String unbind(){
+    public String unbind() {
         final RequestEntity request = RequestEntity.builder().type("UNBIND").params(this.id).build();
-        try{
+        try {
             final String url = "http://" + masterIp + "/cache/unbind";
             log.info("WebClient" + this.id + " unbind from master server " + url);
-            final String responseStr = HttpUtils.sendHttpRequest(url,request);
+            final String responseStr = HttpUtils.sendHttpRequest(url, request);
             return responseStr;
-        }catch (Exception e){
-            log.warn("WebClient "+ this.id + "fails to unbind from master server.");
+        } catch (Exception e) {
+            log.warn("WebClient " + this.id + "fails to unbind from master server.");
             e.printStackTrace();
             return "error occurs";
         }
     }
 
-    public WebClient getResources(){
+    public WebClient getResources() {
         updateVideoList();
         return this;
     }
@@ -97,17 +101,34 @@ public class WebClient {
     /**
      * sort video by popularity.
      */
-    public void updateVideoList(){
+    public void updateVideoList() {
+        resources.clear();
         final List<Video> newList = new ArrayList<Video>();
-        for(String key : counters.keySet()){
+        for (String key : counters.keySet()) {
             final Video video = Video.builder()
                     .name(key)
                     .clickNum(counters.get(key))
                     .build();
-            newList.add(video);
+            resources.add(video);
         }
-        Collections.sort(newList);
-        resources = newList;
+        Collections.sort(resources);
+       // log.info(resources.toString());
     }
 
+    /**
+     * It is a test init function to set up webClient.
+     */
+    @PostConstruct
+    public void tmpInit() {
+        log.info("WebClient init method.");
+        final int resourceSize = resourceAmount;
+        for (int i = 1; i <= resourceSize; i++) {
+            final String fileNameNum = String.format("%03d", i);
+            counters.put(fileNameNum,i);
+            resourceMap.put(fileNameNum,new HashSet<>());
+        }
+
+        final Video video = Video.builder().name("001").clickNum(1).build();
+        tmp.add(video);
+    }
 }

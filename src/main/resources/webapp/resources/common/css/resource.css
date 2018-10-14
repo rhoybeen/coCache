@@ -1,0 +1,17 @@
+div .local_cache {
+    background-color:yellow;
+    height:10px;
+    width: 20px;
+}
+
+div .peer_cache {
+    background-color:yellow;
+    height:10px;
+    width: 20px;
+}
+
+div .no_cache {
+    background-color:yellow;
+    height:10px;
+    width: 20px;
+}

@@ -1,6 +1,8 @@
 package bupt.wspn.cache.model;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
@@ -17,7 +19,7 @@ public class ResponseEntity {
     public String toJSONString() {
         final JSONObject jsonObj = this.header.toJSONObject();
         jsonObj.put(RESPONSE_PAYLOAD, payload);
-        return jsonObj.toString();
+        return jsonObj.toJSONString();
     }
 
     public static ResponseEntity successEntityWithPayload(final Object payload) {
