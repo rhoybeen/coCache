@@ -3,15 +3,14 @@ package bupt.wspn.cache.service;
 import bupt.wspn.cache.Utils.HttpUtils;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
+import bupt.wspn.cache.model.Video;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Define controller client operations here. Each client is a cache server that provides VOD services
@@ -53,6 +52,9 @@ public class WebClient {
     //Map indicating delays between itself and the other nodes.
     private final Map<String, Integer> delayMap = new HashMap<String, Integer>();
 
+    //provide sortde video list.
+    private List<Video> resources = new ArrayList<Video>();
+
     /**
      * Bind web client to cache-control(master) server. It's a multi-to-one relationship.
      */
@@ -65,13 +67,47 @@ public class WebClient {
             final String url = "http://" + masterIp + "/cache/bind";
             log.info("WebClient" + this.id + " bind to master server " + url);
             final String responseStr = HttpUtils.sendHttpRequest(url,request);
-//            final JSONObject response = JSONObject.parseObject(responseStr);
             return responseStr;
         }catch (Exception e){
             log.warn("WebClient "+ this.id + "fails to bind master server.");
             e.printStackTrace();
             return "error occurs";
         }
+    }
+
+    public String unbind(){
+        final RequestEntity request = RequestEntity.builder().type("UNBIND").params(this.id).build();
+        try{
+            final String url = "http://" + masterIp + "/cache/unbind";
+            log.info("WebClient" + this.id + " unbind from master server " + url);
+            final String responseStr = HttpUtils.sendHttpRequest(url,request);
+            return responseStr;
+        }catch (Exception e){
+            log.warn("WebClient "+ this.id + "fails to unbind from master server.");
+            e.printStackTrace();
+            return "error occurs";
+        }
+    }
+
+    public WebClient getResources(){
+        updateVideoList();
+        return this;
+    }
+
+    /**
+     * sort video by popularity.
+     */
+    public void updateVideoList(){
+        final List<Video> newList = new ArrayList<Video>();
+        for(String key : counters.keySet()){
+            final Video video = Video.builder()
+                    .name(key)
+                    .clickNum(counters.get(key))
+                    .build();
+            newList.add(video);
+        }
+        Collections.sort(newList);
+        resources = newList;
     }
 
 }

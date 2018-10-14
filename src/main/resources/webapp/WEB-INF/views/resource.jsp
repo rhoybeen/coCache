@@ -10,11 +10,9 @@
 <body>
 <jsp:include page="lib_header.jsp"/>
 
-<link href="/resources/common/css/console.css" rel="stylesheet">
-<link href="/resources/vis/vis.min.css" rel="stylesheet">
+<link href="/resources/common/css/resource.css" rel="stylesheet">
 
-<script src="/resources/vis/vis.min.js"></script>
-<script src="/resources/common/js/console.js"></script>
+<script src="/resources/common/js/resource.js"></script>
 
 <div class="jumbotron text-center" style="margin-bottom:0">
   <h1>移动边缘CDN缓存协作系统</h1>
@@ -40,30 +38,20 @@
   </div>
 </nav>
 
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-md-8 well">
-        <h4>协作缓存节点</h4><hr>
-        <div class="col-md-4">
-          <div class="panel panel-info">
-              <div class="panel-heading">
-                  id: A1 SBS
+<div class="container-fluid gallery-container">
+    <div class="tz-gallery">
+        <div class="row">
+          <div class="col-sm-6 col-md-4">
+            <div class="thumbnail">
+              <img src="/resources/thumbnails/img001.jpg" alt="1" width="100%">
+              <div class="caption">
+                  <h3>A1</h3>
+                  <p>Some description</p>
               </div>
-              <div class="panel-body">
-                  面板内容
-              </div>
-          </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-4" >
-      <div class="well panel">
-       <h4>节点拓扑</h4> <hr>
-       <div id="vis_network" style="height: 400px;"></div>
-      </div>
 
-    </div>
-    </div>
-  </div>
 </div>
 
 <div class="jumbotron text-center" style="margin-bottom:0">

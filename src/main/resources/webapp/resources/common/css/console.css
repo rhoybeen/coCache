@@ -1,0 +1,31 @@
+
+.css{
+	width:50px;
+	border:1px solid red;
+	/*
+	overflow-x:scroll;左右滚动
+	overflow-x:scroll;上下滚动
+	
+	overflow属性: 检索或设置当对象的内容超过其指定高度及宽度时如何显示内容
+	overflow: auto; 在需要时内容会自动添加滚动条
+	overflow: scroll; 总是显示滚动条
+	overflow-x: hidden; 禁止横向的滚动条
+	overflow-y: scroll; 总是显示纵向滚动条
+	*/
+	scrollbar-face-color: #006400;/*'滚动条凸出部分的颜色*/
+	scrollbar-highlight-color:   #FFFFFF;/*' 滚动条空白部分的颜色*/
+	scrollbar-shadow-color:   #006400;/*滚动条立体的颜色*/
+	scrollbar-3dlight-color:    #006400;/*滚动条亮边的颜色*/
+	scrollbar-arrow-color:   #006400; 　/*上下按钮上三角箭头的颜色*/
+	scrollbar-track-color:    #006400; 　/*'滚动条的背景颜色*/
+	scrollbar-darkshadow-color:    #006400;　/*'滚动条强阴影的颜色*/ }
+
+.panel{
+	overflow-x:scroll;
+	overflow-x:scroll;
+}
+
+.fakeimg {
+    height: 200px;
+     background: #aaa;
+}
