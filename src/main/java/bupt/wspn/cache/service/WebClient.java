@@ -5,8 +5,7 @@ import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
 import com.alibaba.fastjson.annotation.JSONField;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -19,6 +18,8 @@ import java.util.*;
 @Getter
 @Setter
 @Slf4j
+@NoArgsConstructor
+@AllArgsConstructor
 public class WebClient {
 
     @Value("${slave.ip}")
@@ -36,7 +37,7 @@ public class WebClient {
     @Value("${slave.parentId}")
     private String parentId;
 
-    @Value("${slave.capacity}")
+    @Value("${slave.SBS_MEC.capacity}")
     private int capacity;
 
     @Value("${slave.resourceAmount}")

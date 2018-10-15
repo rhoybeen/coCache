@@ -4,7 +4,7 @@ $(document).ready(function(){
 
 function populateResourceGallery(){
     $.ajax({
-        url: 'http://localhost:8080/slave/resource/list',
+        url: '/slave/resource/list',
         success: function(data) {
             var jsonObj = JSON.parse(data);
             if (jsonObj['isSuccess']) {
