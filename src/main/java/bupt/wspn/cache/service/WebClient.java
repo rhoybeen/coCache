@@ -65,7 +65,7 @@ public class WebClient {
                 .params(this)
                 .build();
         try {
-            final String url = "http://" + masterIp + "/cache/bind";
+            final String url = "http://" + masterIp + "/console/bind";
             log.info("WebClient" + this.id + " bind to master server " + url);
             final String responseStr = HttpUtils.sendHttpRequest(url, request);
             return responseStr;
@@ -79,7 +79,7 @@ public class WebClient {
     public String unbind() {
         final RequestEntity request = RequestEntity.builder().type("UNBIND").params(this.id).build();
         try {
-            final String url = "http://" + masterIp + "/cache/unbind";
+            final String url = "http://" + masterIp + "/console/unbind";
             log.info("WebClient" + this.id + " unbind from master server " + url);
             final String responseStr = HttpUtils.sendHttpRequest(url, request);
             return responseStr;

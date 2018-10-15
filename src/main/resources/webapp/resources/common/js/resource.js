@@ -30,11 +30,11 @@ function populateResourceGallery(){
                     var cacheNode;
                     var cacheType;
                     if($.isEmptyObject(cachedNodes)){
-                        cacheNode = 'no-cache';
-                        cacheType = '❌';
+                        cacheNode = 'none';
+                        cacheType = '<span class="label label-danger">未缓存</span>';
                     }else{
                         cacheNode = cachedNodes[0];
-                        cacheType = (cacheNode == nodeId) ? '👍' : '👉';
+                        cacheType = (cacheNode == nodeId) ? '<span class="label label-success">本地缓存</span>' : '<span class="label label-warning">协作缓存</span>';
                     }
                     strDiv += '<p align="left">缓存位置：' + cacheNode + cacheType + '</p>';
                     strDiv += '<p align="left">点击量：' + videoClicks + '</p>';

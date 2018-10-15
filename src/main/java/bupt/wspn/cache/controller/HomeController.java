@@ -41,10 +41,6 @@ import java.util.Locale;
  */
 @Controller
 public class HomeController {
-
-    private static final Logger logger = LoggerFactory
-            .getLogger(HomeController.class);
-
     /**
      * Simple controller for "/" that returns a JSP view.
      *
@@ -53,22 +49,7 @@ public class HomeController {
      */
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String home(Locale locale, Model model) {
-
-        Date date = new Date();
-        DateFormat dateFormat =
-                DateFormat.getDateTimeInstance(DateFormat.LONG,
-                        DateFormat.LONG, locale);
-
-        String formattedDate = dateFormat.format(date);
-        model.addAttribute("serverTime", formattedDate);
-
-        /*
-         * When using embedded Jetty there can be issues with JSP tag libraries.
-         * We'll put some stuff here to test the c:forEach tag.
-         */
-        model.addAttribute("someItems", new String[] { "one", "two", "three" });
-
-        return "home";
+        return "console";
     }
 
 }

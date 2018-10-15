@@ -34,7 +34,7 @@
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav">
         <li class="active"><a href="#">控制台</a></li>
-        <li><a href="#">视频点播</a></li>
+        <li><a href="/slave/resource">视频点播</a></li>
       </ul>
     </div>
   </div>
