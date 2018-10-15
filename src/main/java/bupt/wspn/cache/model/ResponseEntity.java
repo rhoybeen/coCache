@@ -19,7 +19,7 @@ public class ResponseEntity {
     public String toJSONString() {
         final JSONObject jsonObj = this.header.toJSONObject();
         jsonObj.put(RESPONSE_PAYLOAD, payload);
-        return jsonObj.toJSONString();
+        return jsonObj.toString();
     }
 
     public static ResponseEntity successEntityWithPayload(final Object payload) {

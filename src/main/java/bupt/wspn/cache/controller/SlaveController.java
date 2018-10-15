@@ -51,7 +51,7 @@ public class SlaveController {
     @RequestMapping(value = "/resource/list")
     public String getResources(){
         log.info("Request webClient resources");
-        final WebClient res = webClient.getResources();
+        final WebClient res = webClient.retrieveDataResources();
         final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(res);
         return responseEntity.toJSONString();
     }

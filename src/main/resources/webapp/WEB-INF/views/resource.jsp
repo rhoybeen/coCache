@@ -11,6 +11,7 @@
 <jsp:include page="lib_header.jsp"/>
 
 <link href="/resources/common/css/resource.css" rel="stylesheet">
+<link rel="stylesheet" href="/resources/common/css/thumbnail-gallery.css">
 
 <script src="/resources/common/js/resource.js"></script>
 
@@ -39,17 +40,7 @@
 </nav>
 
 <div class="container-fluid gallery-container">
-    <div class="tz-gallery">
-        <div class="row">
-          <div class="col-sm-6 col-md-4">
-            <div class="thumbnail">
-              <img src="/resources/thumbnails/img001.jpg" alt="1" width="100%">
-              <div class="caption">
-                  <h3>A1</h3>
-                  <p>Some description</p>
-              </div>
-            </div>
-        </div>
+    <div class="tz-gallery" id="gallery">
     </div>
 
 </div>

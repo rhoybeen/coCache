@@ -4,7 +4,6 @@ import bupt.wspn.cache.Utils.HttpUtils;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Getter;
 import lombok.Setter;
@@ -55,9 +54,7 @@ public class WebClient {
     private final Map<String, Integer> delayMap = new HashMap<String, Integer>();
 
     //provide sorted video list.
-    private final List<Video> resources = new ArrayList<Video>();
-
-    private List<Video> tmp = new ArrayList<>();
+    private List<Video> resources = new ArrayList<Video>();
 
     /**
      * Bind web client to cache-control(master) server. It's a multi-to-one relationship.
@@ -93,7 +90,7 @@ public class WebClient {
         }
     }
 
-    public WebClient getResources() {
+    public WebClient retrieveDataResources() {
         updateVideoList();
         return this;
     }
@@ -102,17 +99,16 @@ public class WebClient {
      * sort video by popularity.
      */
     public void updateVideoList() {
-        resources.clear();
         final List<Video> newList = new ArrayList<Video>();
         for (String key : counters.keySet()) {
             final Video video = Video.builder()
                     .name(key)
                     .clickNum(counters.get(key))
                     .build();
-            resources.add(video);
+            newList.add(video);
         }
-        Collections.sort(resources);
-       // log.info(resources.toString());
+        Collections.sort(newList);
+        resources = newList;
     }
 
     /**
@@ -127,8 +123,5 @@ public class WebClient {
             counters.put(fileNameNum,i);
             resourceMap.put(fileNameNum,new HashSet<>());
         }
-
-        final Video video = Video.builder().name("001").clickNum(1).build();
-        tmp.add(video);
     }
 }
