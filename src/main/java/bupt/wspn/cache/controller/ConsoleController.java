@@ -54,6 +54,17 @@ public class ConsoleController {
     }
 
     @ResponseBody
+    @RequestMapping(value = "/sync")
+    public String sync(@RequestBody String params, HttpServletRequest request){
+        final String uri = request.getRemoteHost();
+        final JSONObject jsonObject = JSONObject.parseObject(params);
+        final String webClientStr = jsonObject.getString("params");
+        log.info("Sync client " + uri);
+        final boolean res = cacheService.sync(webClientStr);
+        return String.valueOf(res);
+    }
+
+    @ResponseBody
     @RequestMapping(value = "/unbind")
     public String unbind(@RequestBody String params, HttpServletRequest request){
         final String uri = request.getRemoteHost();

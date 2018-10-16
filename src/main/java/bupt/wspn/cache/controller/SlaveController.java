@@ -25,7 +25,7 @@ public class SlaveController {
     @RequestMapping(value = "/info")
     public String getSlaveIndo(){
         log.info("Get webClient  "+ webClient.getId() + " info.");
-        return webClient.toString();
+        return ResponseEntity.successEntityWithPayload(webClient).toJSONString();
     }
 
     @ResponseBody

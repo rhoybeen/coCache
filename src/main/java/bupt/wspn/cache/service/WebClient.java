@@ -1,5 +1,6 @@
 package bupt.wspn.cache.service;
 
+import bupt.wspn.cache.Utils.FilenameConvertor;
 import bupt.wspn.cache.Utils.HttpUtils;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
@@ -120,9 +121,22 @@ public class WebClient {
         log.info("WebClient init method.");
         final int resourceSize = resourceAmount;
         for (int i = 1; i <= resourceSize; i++) {
-            final String fileNameNum = String.format("%03d", i);
+            final String fileNameNum = FilenameConvertor.toStringName(i);
             counters.put(fileNameNum,i);
             resourceMap.put(fileNameNum,new HashSet<>());
+        }
+    }
+
+    public boolean syncWithCacheServer(){
+        final RequestEntity request = RequestEntity.builder().type("SYNC").params(this.id).build();
+        try {
+            final String url = "http://" + masterIp + "/console/sync";
+            log.info("WebClient" + this.id + " unbind from master server " + url);
+            final String responseStr = HttpUtils.sendHttpRequest(url, request);
+            return true;
+        } catch (Exception e) {
+            log.warn("WebClient " + this.id + "fails to unbind from master server.");
+            return false;
         }
     }
 }

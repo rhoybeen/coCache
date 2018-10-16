@@ -21,14 +21,14 @@ public class SimulatorController {
 
     @ResponseBody
     @RequestMapping(value = "/client/add/{parentId}")
-    public String simuWebClient(@PathVariable final String parentId){
+    public String simuWebClient(@PathVariable final String parentId) {
         log.info("Create child node for parent id:" + parentId);
         final WebClient webClient = cacheService.simuWebClient(parentId);
-        if(Objects.isNull(webClient)){
-            final ResponseEntity responseEntity =  ResponseEntity
+        if (Objects.isNull(webClient)) {
+            final ResponseEntity responseEntity = ResponseEntity
                     .retryableFailEntity("Failed to create node with parentID" + parentId);
             return responseEntity.toJSONString();
-        }else {
+        } else {
             final ResponseEntity responseEntity = ResponseEntity
                     .successEntityWithPayload(webClient);
             return responseEntity.toJSONString();
@@ -37,9 +37,18 @@ public class SimulatorController {
 
     @ResponseBody
     @RequestMapping(value = "/client/del/{nodeId}")
-    public String removeWebClientById(@PathVariable String nodeId){
+    public String removeWebClientById(@PathVariable String nodeId) {
         log.info("Delete node by id:" + nodeId);
-        final boolean res = cacheService.delWebClient(nodeId);
-        return ResponseEntity.successEntityWithPayload("Successfully deleted node by id "+nodeId).toJSONString();
+        cacheService.delWebClient(nodeId);
+        return ResponseEntity.successEntityWithPayload("Successfully deleted node by id " + nodeId).toJSONString();
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/request/{nodeId}/{videoId}")
+    public String requestVideo(@PathVariable final String nodeId, @PathVariable final String videoId) {
+        log.info("Request video:" + videoId + " from cdn node " + nodeId);
+        return cacheService.simuRequest(nodeId,videoId) ?
+                ResponseEntity.successEntityWithPayload("Success.").toJSONString() :
+                ResponseEntity.retryableFailEntity("Request failed.").toJSONString();
     }
 }
