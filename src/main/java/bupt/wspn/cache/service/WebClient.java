@@ -5,6 +5,7 @@ import bupt.wspn.cache.Utils.HttpUtils;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -113,18 +114,11 @@ public class WebClient {
         resources = newList;
     }
 
-    /**
-     * It is a test init function to set up webClient.
-     */
-    @PostConstruct
-    public void tmpInit() {
-        log.info("WebClient init method.");
-        final int resourceSize = resourceAmount;
-        for (int i = 1; i <= resourceSize; i++) {
-            final String fileNameNum = FilenameConvertor.toStringName(i);
-            counters.put(fileNameNum,i);
-            resourceMap.put(fileNameNum,new HashSet<>());
-        }
+    public boolean sync(@NonNull final String webStr){
+        final WebClient webClient = JSON.parseObject(webStr, WebClient.class);
+        final String webClientId = webClient.getId();
+        log.info("Sync from master cache server ");
+        return true;
     }
 
     public boolean syncWithCacheServer(){
@@ -137,6 +131,20 @@ public class WebClient {
         } catch (Exception e) {
             log.warn("WebClient " + this.id + "fails to unbind from master server.");
             return false;
+        }
+    }
+
+    /**
+     * Init function for webClient.
+     */
+    @PostConstruct
+    public void initWebClient() {
+        log.info("WebClient init method.");
+        final int resourceSize = resourceAmount;
+        for (int i = 1; i <= resourceSize; i++) {
+            final String fileNameNum = FilenameConvertor.toStringName(i);
+            counters.put(fileNameNum,i);
+            resourceMap.put(fileNameNum,new HashSet<>());
         }
     }
 }

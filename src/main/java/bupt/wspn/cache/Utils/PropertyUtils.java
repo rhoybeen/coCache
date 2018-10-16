@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 @Slf4j
-public class PropertyUtil {
+public class PropertyUtils {
 
     private static Properties props;
     static{
@@ -20,7 +20,7 @@ public class PropertyUtil {
         props = new Properties();
         InputStream in = null;
         try {
-            in = PropertyUtil.class.getClassLoader().getResourceAsStream("slave.properties");
+            in = PropertyUtils.class.getClassLoader().getResourceAsStream("slave.properties");
             props.load(in);
         } catch (FileNotFoundException e) {
             log.error("slave.properties文件未找到");

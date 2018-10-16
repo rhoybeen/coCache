@@ -12,10 +12,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * NetState wraps PING to check the network availability between two hosts.
+ * NetStateUtils wraps PING to check the network availability between two hosts.
  */
 @Slf4j
-public class NetState {
+public class NetStateUtils {
     private final static int TIME_OUT_MS = 2000;
 
     public static double ping(String ipv4Addr) throws IOException {

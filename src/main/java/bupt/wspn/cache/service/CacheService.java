@@ -1,15 +1,17 @@
 package bupt.wspn.cache.service;
 
-import bupt.wspn.cache.Utils.PropertyUtil;
+import bupt.wspn.cache.Utils.HttpUtils;
+import bupt.wspn.cache.Utils.PropertyUtils;
 import bupt.wspn.cache.Utils.RequestUtils;
-import bupt.wspn.cache.model.Node;
 import bupt.wspn.cache.model.NodeType;
+import bupt.wspn.cache.model.RequestEntity;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import jdk.nashorn.internal.ir.RuntimeNode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -74,6 +76,29 @@ public class CacheService {
         }
     }
 
+    /**
+     * Sync with client node 1.
+     * @return
+     */
+    public boolean syncWithClient1(){
+        final WebClient webClient = webClientMap.get("1");
+        final RequestEntity request = RequestEntity.builder()
+                .type("SYNC")
+                .params(webClient)
+                .build();
+        try {
+            final String clientIp = webClient.getIp();
+            final String url = "http://" + clientIp + "/slave/sync";
+            log.info("Cache Server sync with client 1 " + url);
+            final String responseStr = HttpUtils.sendHttpRequest(url, request);
+            return true;
+        } catch (Exception e) {
+            log.warn("Cache Server failed to sync with client 1.");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean unBindWebClient(String clientId) {
         if (webClientMap.containsKey(clientId)) {
             webClientMap.remove(clientId);
@@ -86,6 +111,11 @@ public class CacheService {
         return nodes;
     }
 
+    /**
+     * Simulate a slave client.
+     * @param parentStr
+     * @return
+     */
     public WebClient simuWebClient(final String parentStr) {
         final String parentId = parentStr.equals("0") ? null : parentStr;
         if (Objects.nonNull(parentId) && !webClientMap.containsKey(parentId)) {
@@ -113,8 +143,8 @@ public class CacheService {
         } else {
             nodeType = (parent.getNodeType() == NodeType.REGIONAL_MEC) ? NodeType.MBS_MEC : NodeType.SBS_MEC;
         }
-        final int capacity = Integer.valueOf(PropertyUtil.getProperty("slave." + nodeType + ".capacity"));
-        final int resouceAmount = Integer.valueOf(PropertyUtil.getProperty("slave.resourceAmount"));
+        final int capacity = Integer.valueOf(PropertyUtils.getProperty("slave." + nodeType + ".capacity"));
+        final int resouceAmount = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
         final String ip = "simulator" + id;
         final String masterIp = "localhost";
         final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, resouceAmount, masterIp, new ArrayList<>());
@@ -128,6 +158,12 @@ public class CacheService {
         return true;
     }
 
+    /**
+     * Manually request video from a specified client.
+     * @param nodeId
+     * @param videoId
+     * @return
+     */
     public boolean simuRequest(@NonNull final String nodeId, @NonNull final String videoId) {
         final WebClient webClient = webClientMap.get(nodeId);
         if (Objects.isNull(webClient)) {
@@ -137,6 +173,12 @@ public class CacheService {
         return increaseResourceCount(webClient,videoId);
     }
 
+    /**
+     * Request a video source and increase its counter.
+     * @param webClient
+     * @param videoId
+     * @return
+     */
     public boolean increaseResourceCount(@NonNull final WebClient webClient, @NonNull final String videoId){
         final Map<String, Set<String>> resourceMap = webClient.getResourceMap();
         if (!resourceMap.containsKey(videoId)) {
@@ -149,11 +191,39 @@ public class CacheService {
         return true;
     }
 
-    public boolean generateRequest(@NonNull final String nodeId, @NonNull final double lamda){
+    /**
+     * Generate requests for all clients.
+     * Modify it if you want different clients have different lamda arg.
+     * It supposes that only client 1 is a real client.
+     * @param lamda
+     * @return
+     */
+    public boolean generateRequest(final double lamda){
+        log.info("Generate requests for all webClients.");
+        for (final WebClient webClient : webClientMap.values()) {
+            generateRequest(webClient.getId(),lamda);
+        }
+        return syncWithClient1();
+    }
+
+    /**
+     * Generate request for specified web client
+     * @param nodeId
+     * @param lamda
+     * @return
+     */
+    public boolean generateRequest(@NonNull final String nodeId, final double lamda){
         return generateRequest(nodeId,lamda,DEFAULT_REQUEST_NUMBER);
     }
 
-    public boolean generateRequest(@NonNull final String nodeId, @NonNull final double lamda, @NonNull final int requestNum) {
+    /**
+     * Generate request for specified web client by a certain request number.
+     * @param nodeId
+     * @param lamda
+     * @param requestNum
+     * @return
+     */
+    public boolean generateRequest(@NonNull final String nodeId, final double lamda, final int requestNum) {
         log.info("Generate requests for webClient "+nodeId+" with parameter:" + lamda);
         final WebClient webClient = webClientMap.get(nodeId);
         if(Objects.isNull(webClient)){
@@ -163,7 +233,7 @@ public class CacheService {
         final Map<String,Integer> counters = webClient.getCounters();
         counters.clear();
         for(int i=0;i<requestNum;i++){
-            final String videoId = RequestUtils.getRequestId(lamda);
+            final String videoId = RequestUtils.getRequestId(lamda,true);
             increaseResourceCount(webClient,videoId);
         }
         return true;
@@ -171,6 +241,5 @@ public class CacheService {
 
     @PostConstruct
     public void initCacheService(){
-        log.info(Integer.toString(DEFAULT_REQUEST_NUMBER));
     }
 }
