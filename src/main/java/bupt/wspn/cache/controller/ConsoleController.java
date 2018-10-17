@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -59,6 +60,16 @@ public class ConsoleController {
         log.info("Sync client " + uri);
         final boolean res = cacheService.sync(webClientStr);
         return String.valueOf(res);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/sync/{clientId}")
+    public String syncWithClient1(@PathVariable final String clientId){
+        log.info("Sync with client 1");
+        if(cacheService.syncWithClient1())
+            return ResponseEntity.successEntityWithPayload("Successfully sync with client 1").toJSONString();
+        else
+            return ResponseEntity.retryableFailEntity("Failed to sync with client 1").toJSONString();
     }
 
     @ResponseBody

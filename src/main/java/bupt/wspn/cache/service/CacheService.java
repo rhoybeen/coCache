@@ -1,5 +1,6 @@
 package bupt.wspn.cache.service;
 
+import bupt.wspn.cache.Utils.FilenameConvertor;
 import bupt.wspn.cache.Utils.HttpUtils;
 import bupt.wspn.cache.Utils.PropertyUtils;
 import bupt.wspn.cache.Utils.RequestUtils;
@@ -113,12 +114,11 @@ public class CacheService {
 
     /**
      * Simulate a slave client.
-     * @param parentStr
+     * @param parentId
      * @return
      */
-    public WebClient simuWebClient(final String parentStr) {
-        final String parentId = parentStr.equals("0") ? null : parentStr;
-        if (Objects.nonNull(parentId) && !webClientMap.containsKey(parentId)) {
+    public WebClient simuWebClient(final String parentId) {
+        if (!parentId.equals("0") && !webClientMap.containsKey(parentId)) {
             log.info("Create simu webClient failed. " + parentId + "does not exist.");
             return null;
         }
@@ -147,7 +147,11 @@ public class CacheService {
         final int resouceAmount = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
         final String ip = "simulator" + id;
         final String masterIp = "localhost";
-        final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, resouceAmount, masterIp, new ArrayList<>());
+        final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, resouceAmount, masterIp);
+        for(int i=1;i<=resouceAmount;i++){
+            webClient.getResourceMap().put(FilenameConvertor.toStringName(i),new HashSet<>());
+        }
+        //todo: set up other variants in web client to avoid errors.
         log.info("Put web client id:" + id + "to webClient map");
         webClientMap.put(id, webClient);
         return webClient;
@@ -227,15 +231,17 @@ public class CacheService {
         log.info("Generate requests for webClient "+nodeId+" with parameter:" + lamda);
         final WebClient webClient = webClientMap.get(nodeId);
         if(Objects.isNull(webClient)){
-            log.info("No such webClient");
+            log.info("No such webClient " + nodeId);
             return false;
         }
         final Map<String,Integer> counters = webClient.getCounters();
         counters.clear();
-        for(int i=0;i<requestNum;i++){
-            final String videoId = RequestUtils.getRequestId(lamda,true);
-            increaseResourceCount(webClient,videoId);
+        final List<String> requests = RequestUtils.getRequestId(lamda,true);
+        log.info(requests.toString());
+        for(String requestId : requests){
+            increaseResourceCount(webClient,requestId);
         }
+        log.info("After:" + webClient.getCounters().toString());
         return true;
     }
 

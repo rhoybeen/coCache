@@ -9,6 +9,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.PostConstruct;
@@ -21,40 +22,48 @@ import java.util.*;
 @Setter
 @Slf4j
 @NoArgsConstructor
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class WebClient {
 
+    @NonNull
     @Value("${slave.ip}")
     private String ip;
 
+    @NonNull
     @Value("${slave.id}")
     private String id;
 
+    @NonNull
     @Value("${slave.type}")
     private NodeType nodeType;
 
+    @NonNull
     @Value("${slave.name}")
     private String name;
 
+    @NonNull
     @Value("${slave.parentId}")
     private String parentId;
 
+    @NonNull
     @Value("${slave.SBS_MEC.capacity}")
     private int capacity;
 
+    @NonNull
     @Value("${slave.resourceAmount}")
     private int resourceAmount;
 
+    @NonNull
     @JSONField(serialize = false)
     @Value("${slave.masterIp}")
     private String masterIp;
 
     //Map indicating resources clicks.
-    private final Map<String, Integer> counters = new HashMap<String, Integer>();
+    private Map<String, Integer> counters = new HashMap<String, Integer>();
     //Map indicating which node resources locate.
-    private final Map<String, Set<String>> resourceMap = new HashMap<>();
+    private Map<String, Set<String>> resourceMap = new HashMap<>();
     //Map indicating delays between itself and the other nodes.
-    private final Map<String, Integer> delayMap = new HashMap<String, Integer>();
+    private Map<String, Integer> delayMap = new HashMap<String, Integer>();
 
     //provide sorted video list.
     private List<Video> resources = new ArrayList<Video>();
@@ -114,10 +123,21 @@ public class WebClient {
         resources = newList;
     }
 
+    /**
+     * Sync from master cache server.
+     * @param webStr
+     * @return
+     */
     public boolean sync(@NonNull final String webStr){
         final WebClient webClient = JSON.parseObject(webStr, WebClient.class);
         final String webClientId = webClient.getId();
-        log.info("Sync from master cache server ");
+        if(!webClientId.equals(this.id)) return false;
+        this.resources = webClient.resources;
+        this.resourceMap = webClient.resourceMap;
+        this.counters = webClient.counters;
+        this.delayMap = webClient.delayMap;
+        log.info("Sync from master cache server " + webStr);
+        log.info("Client 1 counters:" + this.getCounters().toString());
         return true;
     }
 

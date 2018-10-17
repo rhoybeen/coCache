@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -41,6 +42,26 @@ public class SimulatorController {
         log.info("Delete node by id:" + nodeId);
         cacheService.delWebClient(nodeId);
         return ResponseEntity.successEntityWithPayload("Successfully deleted node by id " + nodeId).toJSONString();
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/request/arg/{lamda:.+}")
+    public String setupAllNodesRequest(@PathVariable final Double lamda){
+        log.info("Set up requests for all nodes with lamda:" + lamda.toString());
+        if(cacheService.generateRequest(lamda))
+            return ResponseEntity.successEntityWithPayload("Successfully set up requests for all nodes").toJSONString();
+        else
+            return ResponseEntity.retryableFailEntity("Failed to set up requests for all nodes.").toJSONString();
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/request/{nodeId}/arg/{lamda:.+}")
+    public String setupNodeRequest(@PathVariable final String nodeId, @PathVariable final Double lamda){
+        log.info("Set up requests for node" + nodeId +" with lamda:" + lamda.toString());
+        if(cacheService.generateRequest(nodeId,lamda))
+            return ResponseEntity.successEntityWithPayload("Successfully set up requests for node").toJSONString();
+        else
+            return ResponseEntity.retryableFailEntity("Failed to set up requests for node").toJSONString();
     }
 
     @ResponseBody

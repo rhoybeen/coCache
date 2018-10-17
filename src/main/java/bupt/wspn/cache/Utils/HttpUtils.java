@@ -15,8 +15,8 @@ import java.net.URL;
 @Slf4j
 public class HttpUtils {
     //HTTP Connections
-    private static final int CONNECTION_TIME_OUT = 2000;
-    private static final int READ_TIME_OUT = 5000;
+    private static final int CONNECTION_TIME_OUT = 5000;
+    private static final int READ_TIME_OUT = 10000;
 
     public static String sendHttpRequest(String dst_url, RequestEntity request) throws Exception {
         final URL url = new URL(dst_url);
