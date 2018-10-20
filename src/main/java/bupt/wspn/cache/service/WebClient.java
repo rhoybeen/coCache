@@ -2,6 +2,7 @@ package bupt.wspn.cache.service;
 
 import bupt.wspn.cache.Utils.FilenameConvertor;
 import bupt.wspn.cache.Utils.HttpUtils;
+import bupt.wspn.cache.model.Node;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
@@ -22,7 +23,6 @@ import java.util.*;
 @Setter
 @Slf4j
 @NoArgsConstructor
-@RequiredArgsConstructor
 public class WebClient {
 
     @NonNull
@@ -67,6 +67,37 @@ public class WebClient {
 
     //provide sorted video list.
     private List<Video> resources = new ArrayList<Video>();
+
+    public WebClient(final String ip,
+                     final String id,
+                     final NodeType nodeType,
+                     final String name,
+                     final String parentId,
+                     final int capacity,
+                     final int resourceAmount,
+                     final String masterIp) {
+        this.ip = ip;
+        this.id = id;
+        this.nodeType = nodeType;
+        this.name = name;
+        this.parentId = parentId;
+        this.capacity = capacity;
+        this.resourceAmount = resourceAmount;
+        this.masterIp = masterIp;
+        initCountersAndResources();
+    }
+
+    /**
+     * Init counters and resourceMap
+     */
+    public void initCountersAndResources() {
+        final int resourceSize = this.resourceAmount;
+        for (int i = 1; i <= resourceSize; i++) {
+            final String fileNameNum = FilenameConvertor.toStringName(i);
+            this.counters.put(fileNameNum, 0);
+            this.resourceMap.put(fileNameNum, new HashSet<>());
+        }
+    }
 
     /**
      * Bind web client to cache-control(master) server. It's a multi-to-one relationship.
@@ -125,13 +156,14 @@ public class WebClient {
 
     /**
      * Sync from master cache server.
+     *
      * @param webStr
      * @return
      */
-    public boolean sync(@NonNull final String webStr){
+    public boolean sync(@NonNull final String webStr) {
         final WebClient webClient = JSON.parseObject(webStr, WebClient.class);
         final String webClientId = webClient.getId();
-        if(!webClientId.equals(this.id)) return false;
+        if (!webClientId.equals(this.id)) return false;
         this.resources = webClient.resources;
         this.resourceMap = webClient.resourceMap;
         this.counters = webClient.counters;
@@ -141,7 +173,7 @@ public class WebClient {
         return true;
     }
 
-    public boolean syncWithCacheServer(){
+    public boolean syncWithCacheServer() {
         final RequestEntity request = RequestEntity.builder().type("SYNC").params(this.id).build();
         try {
             final String url = "http://" + masterIp + "/console/sync";
@@ -163,8 +195,8 @@ public class WebClient {
         final int resourceSize = resourceAmount;
         for (int i = 1; i <= resourceSize; i++) {
             final String fileNameNum = FilenameConvertor.toStringName(i);
-            counters.put(fileNameNum,i);
-            resourceMap.put(fileNameNum,new HashSet<>());
+            counters.put(fileNameNum, i);
+            resourceMap.put(fileNameNum, new HashSet<>());
         }
     }
 }

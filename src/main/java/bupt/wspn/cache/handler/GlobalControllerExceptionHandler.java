@@ -27,4 +27,12 @@ public class GlobalControllerExceptionHandler {
         log.error(msg, e);
         return ResponseEntity.retryableFailEntity(ERROR_RETURN_MSG).toJSONString();
     }
+
+    @ExceptionHandler(value = IllegalArgumentException.class)
+    @ResponseBody
+    public String illegalArgumentExceptionHanlder(final HttpServletRequest request, final Exception e) {
+        final String msg = String.format("IllegalArgumentException happens, pls check your input.", request.getRequestURI());
+        log.error(msg, e);
+        return ResponseEntity.retryableFailEntity(ERROR_RETURN_MSG).toJSONString();
+    }
 }

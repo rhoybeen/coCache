@@ -29,7 +29,7 @@ import java.util.*;
 public class CacheService {
 
     @Value("${slave.default_request_number}")
-    public int DEFAULT_REQUEST_NUMBER ;
+    public int DEFAULT_REQUEST_NUMBER;
 
     public final Map<String, WebClient> webClientMap = new HashMap<>();
 
@@ -79,9 +79,10 @@ public class CacheService {
 
     /**
      * Sync with client node 1.
+     *
      * @return
      */
-    public boolean syncWithClient1(){
+    public boolean syncWithClient1() {
         final WebClient webClient = webClientMap.get("1");
         final RequestEntity request = RequestEntity.builder()
                 .type("SYNC")
@@ -114,6 +115,7 @@ public class CacheService {
 
     /**
      * Simulate a slave client.
+     *
      * @param parentId
      * @return
      */
@@ -148,22 +150,71 @@ public class CacheService {
         final String ip = "simulator" + id;
         final String masterIp = "localhost";
         final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, resouceAmount, masterIp);
-        for(int i=1;i<=resouceAmount;i++){
-            webClient.getResourceMap().put(FilenameConvertor.toStringName(i),new HashSet<>());
-        }
+        webClient.initCountersAndResources();
         //todo: set up other variants in web client to avoid errors.
         log.info("Put web client id:" + id + "to webClient map");
         webClientMap.put(id, webClient);
         return webClient;
     }
 
+    /**
+     * WebClient can be configured in slave.properties.
+     * This method will overrode the previously created webClients which own the same id.
+     *
+     * @return
+     */
+    public boolean createWebClientFromConfiguration() {
+        final int webClientNumber = Integer.valueOf(PropertyUtils.getProperty("cache.client.number"));
+        for (int i = 0; i < webClientNumber; i++) {
+            //Create webClient
+            final String webClientPrefix = "cache.client." + i + ".";
+            final String id = PropertyUtils.getProperty(webClientPrefix + "id");
+            final String ip = PropertyUtils.getProperty(webClientPrefix + "ip");
+            final String name = PropertyUtils.getProperty(webClientPrefix + "name");
+            final String type = PropertyUtils.getProperty(webClientPrefix + "type");
+            final String parentId = PropertyUtils.getProperty(webClientPrefix + "parentId");
+            final WebClient webClient = createWebClient(id, name, type, ip, parentId);
+            if (Objects.isNull(webClient)) return false;
+            this.webClientMap.put(id, webClient);
+        }
+        return true;
+    }
+
+    /**
+     * Create new web client.
+     *
+     * @param id
+     * @param name
+     * @param type
+     * @param ip
+     * @param parentId
+     * @return
+     */
+    public WebClient createWebClient(@NonNull final String id,
+                                     @NonNull final String name,
+                                     @NonNull final String type,
+                                     @NonNull final String ip,
+                                     @NonNull final String parentId) {
+        if (webClientMap.containsKey(id)) {
+            log.info("Webclient with id" + id + "already exist.");
+            return null;
+        }
+        final NodeType nodeType = NodeType.valueOf(type);
+        final int capacity = Integer.valueOf(PropertyUtils.getProperty("slave." + type + ".capacity"));
+        final int resourceAmount = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
+        final String masterIp = PropertyUtils.getProperty("slave.masterIp");
+        return new WebClient(ip, id, nodeType, name, parentId, capacity, resourceAmount, masterIp);
+    }
+
     public boolean delWebClient(final String nodeId) {
+        log.info("Remove web client by id:" + nodeId);
         webClientMap.remove(nodeId);
         return true;
     }
 
     /**
      * Manually request video from a specified client.
+     *
      * @param nodeId
      * @param videoId
      * @return
@@ -174,16 +225,17 @@ public class CacheService {
             log.info("Client " + nodeId + "does not exist.");
             return false;
         }
-        return increaseResourceCount(webClient,videoId);
+        return increaseResourceCount(webClient, videoId);
     }
 
     /**
      * Request a video source and increase its counter.
+     *
      * @param webClient
      * @param videoId
      * @return
      */
-    public boolean increaseResourceCount(@NonNull final WebClient webClient, @NonNull final String videoId){
+    public boolean increaseResourceCount(@NonNull final WebClient webClient, @NonNull final String videoId) {
         final Map<String, Set<String>> resourceMap = webClient.getResourceMap();
         if (!resourceMap.containsKey(videoId)) {
             log.info("Video " + videoId + " does not exist.");
@@ -199,53 +251,56 @@ public class CacheService {
      * Generate requests for all clients.
      * Modify it if you want different clients have different lamda arg.
      * It supposes that only client 1 is a real client.
+     *
      * @param lamda
      * @return
      */
-    public boolean generateRequest(final double lamda){
+    public boolean generateRequest(final double lamda) {
         log.info("Generate requests for all webClients.");
         for (final WebClient webClient : webClientMap.values()) {
-            generateRequest(webClient.getId(),lamda);
+            generateRequest(webClient.getId(), lamda);
         }
         return syncWithClient1();
     }
 
     /**
      * Generate request for specified web client
+     *
      * @param nodeId
      * @param lamda
      * @return
      */
-    public boolean generateRequest(@NonNull final String nodeId, final double lamda){
-        return generateRequest(nodeId,lamda,DEFAULT_REQUEST_NUMBER);
+    public boolean generateRequest(@NonNull final String nodeId, final double lamda) {
+        return generateRequest(nodeId, lamda, DEFAULT_REQUEST_NUMBER);
     }
 
     /**
      * Generate request for specified web client by a certain request number.
+     *
      * @param nodeId
      * @param lamda
      * @param requestNum
      * @return
      */
     public boolean generateRequest(@NonNull final String nodeId, final double lamda, final int requestNum) {
-        log.info("Generate requests for webClient "+nodeId+" with parameter:" + lamda);
+        log.info("Generate requests for webClient " + nodeId + " with parameter:" + lamda);
         final WebClient webClient = webClientMap.get(nodeId);
-        if(Objects.isNull(webClient)){
+        if (Objects.isNull(webClient)) {
             log.info("No such webClient " + nodeId);
             return false;
         }
-        final Map<String,Integer> counters = webClient.getCounters();
+        final Map<String, Integer> counters = webClient.getCounters();
         counters.clear();
-        final List<String> requests = RequestUtils.getRequestId(lamda,true);
+        final List<String> requests = RequestUtils.getRequestId(lamda, true);
         log.info(requests.toString());
-        for(String requestId : requests){
-            increaseResourceCount(webClient,requestId);
+        for (String requestId : requests) {
+            increaseResourceCount(webClient, requestId);
         }
         log.info("After:" + webClient.getCounters().toString());
         return true;
     }
 
     @PostConstruct
-    public void initCacheService(){
+    public void initCacheService() {
     }
 }

@@ -91,7 +91,7 @@ function populateNetworkTopo1(){
                   var parent = node['parentId'];
 
                   //get topo edges
-                  if(parent!= null && parent.length != 0){
+                  if(parent!= "0" && parent.length != 0){
                     var edge = {
                     from: id,
                     to:parent

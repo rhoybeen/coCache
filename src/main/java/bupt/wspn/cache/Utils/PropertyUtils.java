@@ -11,11 +11,12 @@ import java.util.Properties;
 public class PropertyUtils {
 
     private static Properties props;
-    static{
+
+    static {
         loadProps();
     }
 
-    synchronized static private void loadProps(){
+    synchronized static private void loadProps() {
         log.info("开始加载properties文件内容.......");
         props = new Properties();
         InputStream in = null;
@@ -28,7 +29,7 @@ public class PropertyUtils {
             log.error("出现IOException");
         } finally {
             try {
-                if(null != in) {
+                if (null != in) {
                     in.close();
                 }
             } catch (IOException e) {
@@ -38,15 +39,15 @@ public class PropertyUtils {
         log.info("加载properties文件内容完成...........");
     }
 
-    public static String getProperty(String key){
-        if(null == props) {
+    public static String getProperty(String key) {
+        if (null == props) {
             loadProps();
         }
         return props.getProperty(key);
     }
 
     public static String getProperty(String key, String defaultValue) {
-        if(null == props) {
+        if (null == props) {
             loadProps();
         }
         return props.getProperty(key, defaultValue);
