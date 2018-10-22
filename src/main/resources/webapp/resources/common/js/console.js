@@ -13,12 +13,14 @@ function populateNetworkTopo(data){
     var id = node['id'];
     var label = node['label'];
     var parent = node['parentId'];
+    var type = node['type'];
 
     //get topo edges
     if(parent!= null && parent.length != 0){
       var edge = {
       from: id,
-      to:parent
+      to:parent,
+      color: 'grey'
       };
       vis_edges.push(edge);
     }
@@ -26,6 +28,7 @@ function populateNetworkTopo(data){
     var data = {};
     data['id'] = id;
     data['label'] = label;
+    data['group'] = type;
     vis_data.push(data);
   }
 
@@ -41,7 +44,35 @@ function populateNetworkTopo(data){
     nodes: nodes,
     edges: edges
   };
-  var options = {};
+    var options = {
+      nodes: {
+          shape: 'dot',
+          size: 10,
+          font: {
+              size: 10,
+              color: '#000000'
+          },
+          borderWidth: 1
+      },
+      edges: {
+          width: 1,
+      },
+      groups: {
+          SBS_MEC: {
+              color: 'rgba(0,255,0,1)',
+              borderWidth:2
+          },
+          MBS_MEC: {
+              size : 13,
+              color: {background:'green',border:'white'},
+              borderWidth:2
+          },
+          REGIONAL_MEC: {
+              size: 15,
+              color:'rgb(0,255,140)'
+          }
+      }
+    };
   var network = new vis.Network(container, data, options);
 }
 
@@ -89,12 +120,14 @@ function populateNetworkTopo1(){
                   var id = node['id'];
                   var name = node['name'];
                   var parent = node['parentId'];
+                  var type = node['nodeType'];
 
                   //get topo edges
                   if(parent!= "0" && parent.length != 0){
                     var edge = {
                     from: id,
-                    to:parent
+                    to:parent,
+                    color: {color:'grey'}
                     };
                     vis_edges.push(edge);
                   }
@@ -102,6 +135,7 @@ function populateNetworkTopo1(){
                   var data = {};
                   data['id'] = id;
                   data['label'] = name;
+                  data['group'] = type;
                   vis_data.push(data);
                 }
 
@@ -117,7 +151,35 @@ function populateNetworkTopo1(){
                   nodes: nodes,
                   edges: edges
                 };
-                var options = {};
+                var options = {
+                  nodes: {
+                      shape: 'dot',
+                      size: 10,
+                      font: {
+                          size: 10,
+                          color: '#000000'
+                      },
+                      borderWidth: 1
+                  },
+                  edges: {
+                      width: 1,
+                  },
+                  groups: {
+                      SBS_MEC: {
+                          color: 'rgba(0,255,0,1)',
+                          borderWidth:2
+                      },
+                      MBS_MEC: {
+                          size : 13,
+                          color: {background:'green',border:'white'},
+                          borderWidth:2
+                      },
+                      REGIONAL_MEC: {
+                          size: 15,
+                          color:'rgb(0,255,140)'
+                      }
+                  }
+              };
                 var network = new vis.Network(container, data, options);
 
                 } else {
