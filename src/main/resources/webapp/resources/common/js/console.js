@@ -1,5 +1,5 @@
 $(document).ready(function(){
-	populateNetworkTopo(nodes_json["nodes"]);
+	populateNetworkTopo1();
 });
 
 //todo: remove this temporary function. It is only for testing.
@@ -101,7 +101,7 @@ function populateNetworkTopo1(){
 
                   var data = {};
                   data['id'] = id;
-                  data['name'] = name;
+                  data['label'] = name;
                   vis_data.push(data);
                 }
 

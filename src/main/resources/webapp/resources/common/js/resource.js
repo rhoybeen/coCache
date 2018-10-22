@@ -15,12 +15,16 @@ function populateResourceGallery(){
                 var mostPopularVideo = videoList[0];
                 var maxClicks = mostPopularVideo["clickNum"];
                 var gallery = $("#gallery");
+                var chartLabels = [];
+                var charData = [];
 
                 videoList.forEach(video => {
                     var videoName = video['name'];
                     var videoClicks = video['clickNum'];
                     var cachedNodes = resourceMap[videoName];
                     var popularity = (maxClicks == 0) ? 0 : videoClicks / maxClicks * 100;
+                    chartLabels.push(videoName);
+                    charData.push(videoClicks);
 
                     var strDiv = '<div class="col-sm-6 col-md-4">';
                     strDiv += '<div class="thumbnail">';
@@ -43,6 +47,7 @@ function populateResourceGallery(){
                     strDiv += '</div></div></div></div>';
                     gallery.append(strDiv);
                 });
+                populateChart(chartLabels,charData);
                 } else {
                 //show error msg.
                 $(".alert").show();
@@ -53,6 +58,39 @@ function populateResourceGallery(){
         },
         complete: function() {
 
+        }
+    });
+}
+
+function populateChart(videoNames, videoClicks){
+    var canvas = $("#canvas");
+    var label = 'A1 SBS_MEC';
+    var labels = videoNames;
+    var chartData = videoClicks;
+    var barChartData = {
+        labels: labels,
+        datasets:[{
+            label:label,
+            backgroundColor: "rgba(204,66,0,0.4)",
+            borderColor: "rgba(204,66,0,1)",
+            borderWidth: 1,
+            data:chartData
+        }]
+    };
+    var ctx = document.getElementById('canvas').getContext('2d');
+    var myBarChart = new Chart(ctx,{
+        type: 'bar',
+        data: barChartData,
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top',
+                show:false
+            },
+            title: {
+                display: true,
+                text: '节点历史请求记录',
+            },
         }
     });
 }

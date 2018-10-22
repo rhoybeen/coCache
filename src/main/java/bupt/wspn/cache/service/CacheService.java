@@ -14,6 +14,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -26,6 +27,7 @@ import java.util.*;
 @Setter
 @Service
 @Slf4j
+@Order(2)
 public class CacheService {
 
     @Value("${slave.default_request_number}")
@@ -165,14 +167,16 @@ public class CacheService {
      */
     public boolean createWebClientFromConfiguration() {
         final int webClientNumber = Integer.valueOf(PropertyUtils.getProperty("cache.client.number"));
-        for (int i = 0; i < webClientNumber; i++) {
+        for (int i = 1; i <= webClientNumber; i++) {
             //Create webClient
             final String webClientPrefix = "cache.client." + i + ".";
             final String id = PropertyUtils.getProperty(webClientPrefix + "id");
+            log.info(webClientPrefix + "id");
             final String ip = PropertyUtils.getProperty(webClientPrefix + "ip");
             final String name = PropertyUtils.getProperty(webClientPrefix + "name");
             final String type = PropertyUtils.getProperty(webClientPrefix + "type");
             final String parentId = PropertyUtils.getProperty(webClientPrefix + "parentId");
+            log.info("Create webClient from property file with id" + id + " ip" + ip + " name" + name + " type" + type + " parentId" + parentId);
             final WebClient webClient = createWebClient(id, name, type, ip, parentId);
             if (Objects.isNull(webClient)) return false;
             this.webClientMap.put(id, webClient);
@@ -296,11 +300,13 @@ public class CacheService {
         for (String requestId : requests) {
             increaseResourceCount(webClient, requestId);
         }
-        log.info("After:" + webClient.getCounters().toString());
+        //log.info("After:" + webClient.getCounters().toString());
         return true;
     }
 
     @PostConstruct
     public void initCacheService() {
+        createWebClientFromConfiguration();
+   //     generateRequest(0.60);
     }
 }

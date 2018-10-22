@@ -13,6 +13,7 @@
 <link href="/resources/common/css/resource.css" rel="stylesheet">
 <link rel="stylesheet" href="/resources/common/css/thumbnail-gallery.css">
 
+<script src="/resources/common/js/Chart.min.js" type="text/javascript"></script>
 <script src="/resources/common/js/resource.js"></script>
 
 <div class="jumbotron text-center" style="margin-bottom:0">
@@ -40,6 +41,7 @@
 </nav>
 
 <div class="container-fluid gallery-container">
+  <div class="row"><canvas id="canvas" width="90%" height="25"></canvas></div>
     <div class="tz-gallery" id="gallery">
     </div>
 
