@@ -1,5 +1,5 @@
 $(document).ready(function(){
-	populateNetworkTopo1();
+	populateNetworkTopo();
 });
 
 function displayNodeInfo(nodeId){
@@ -15,6 +15,30 @@ function displayNodeInfo(nodeId){
         $("#nodeResourceNum").text(node['resourceAmount']);
         $("#nodeParentId").text(node['parentId']);
     }
+    populateResourceList(node);
+}
+
+function populateResourceList(data){
+    var node = data;
+    var nodeId = node['id'];
+    var table = $('#resourceTableBody');
+    var counters = node['counters'];
+    var resourceMap = node['resourceMap'];
+    for(var videoId in counters){
+        var videoCount = counters[videoId];
+        var caches = resourceMap[videoId];
+        var str = '<tr><td>' + videoId + '.mp4</td>';
+        var str = str + '<td>'+ videoCount + '</td>';
+        if(caches.length == 0){
+            str = str + '<td><span class="label label-danger">无缓存</span></td>';
+        }else if(caches[0] == nodeId){
+            str = str + '<td><span class="label label-success">本地缓存</span></td>';
+        }else{
+            str = str + '<td><span class="label label-info">协作缓存</span></td>';
+        }
+        table.append(str);
+    }
+
 }
 
 var nodes_json = {
@@ -46,7 +70,7 @@ var nodes_json = {
     ]
 }
 
-function populateNetworkTopo1(){
+function populateNetworkTopo(){
     $.ajax({
         url: '/console/nodes',
         success: function(data) {

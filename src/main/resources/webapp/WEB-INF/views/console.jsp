@@ -85,7 +85,7 @@
     <div class="col-md-4" >
       <div class="well panel">
        <h4>节点拓扑</h4> <hr>
-       <div id="vis_network" style="height: 400px;"></div>
+       <div id="vis_network" style="height: 350px;"></div>
       </div>
 
     </div>
@@ -95,24 +95,15 @@
                     资源列表
                 </div>
                 <div class="panel-body">
-                    <table class="table table-condensed">
-
-                      <tbody>
+                    <table class="table table-condensed" id='resourceTable'>
+                      <thead>
                         <tr>
-                          <td>001.mp4</td>
-                          <td>13660</td>
-                          <td><span class="label label-success">本地缓存</span></td>
+                          <th>资源名</th>
+                          <th>请求数</th>
+                            <th>缓存情况</th>
                         </tr>
-                        <tr>
-                          <td>002.mp4</td>
-                          <td>7862</td>
-                          <td><span class="label label-success">本地缓存</span></td>
-                        </tr>
-                        <tr>
-                          <td>003.mp4</td>
-                          <td>1160</td>
-                          <td><span class="label label-info">协作节点</span></td>
-                        </tr>
+                      </thead>
+                      <tbody id='resourceTableBody'>
                       </tbody>
                     </table>
                 </div>
