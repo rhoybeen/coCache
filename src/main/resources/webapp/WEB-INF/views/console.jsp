@@ -5,7 +5,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>移动边缘CDN缓存协作系统</title>
+	<title>移动边缘CDN协作缓存加速系统</title>
 </head>
 <body>
 <jsp:include page="lib_header.jsp"/>
