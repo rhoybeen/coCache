@@ -1,12 +1,11 @@
 package bupt.wspn.cache.service;
 
-import bupt.wspn.cache.Utils.FilenameConvertor;
-import bupt.wspn.cache.Utils.HttpUtils;
-import bupt.wspn.cache.Utils.PropertyUtils;
-import bupt.wspn.cache.Utils.RequestUtils;
+import bupt.wspn.cache.Utils.*;
+import bupt.wspn.cache.model.Edge;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import com.alibaba.fastjson.JSON;
+import com.google.common.graph.MutableValueGraph;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -33,7 +32,13 @@ public class CacheService {
     @Value("${slave.default_request_number}")
     public int DEFAULT_REQUEST_NUMBER;
 
+    public int MAX_CLIENT_NUM = 15;
+
     public final Map<String, WebClient> webClientMap = new HashMap<>();
+
+    public transient MutableValueGraph<WebClient, Edge> graph;
+
+    public double[][] delayMap = new double[MAX_CLIENT_NUM+1][MAX_CLIENT_NUM+1];
 
     /**
      * get delays among cache nodes.
@@ -41,6 +46,7 @@ public class CacheService {
      * @return
      */
     public Map<String, Map<String, Integer>> retrieveNetworkDelays() {
+
         return null;
     }
 
@@ -59,6 +65,7 @@ public class CacheService {
             final String webClientId = webClient.getId();
             log.info("Master bind webClient " + webClientId);
             webClientMap.put(webClientId, webClient);
+            graph = GraphUtils.createGraphFromMap(webClientMap);
             return true;
         } catch (Exception e) {
             log.info("Master bind failure: " + e.toString());
@@ -72,6 +79,7 @@ public class CacheService {
             final String webClientId = webClient.getId();
             log.info("Master sync webClient " + webClientId);
             webClientMap.put(webClientId, webClient);
+            graph = GraphUtils.createGraphFromMap(webClientMap);
             return true;
         } catch (Exception e) {
             log.info("Master sync failure: " + e.toString());
@@ -106,6 +114,7 @@ public class CacheService {
     public boolean unBindWebClient(String clientId) {
         if (webClientMap.containsKey(clientId)) {
             webClientMap.remove(clientId);
+            graph = GraphUtils.createGraphFromMap(webClientMap);
             return true;
         } else return false;
     }
@@ -156,6 +165,7 @@ public class CacheService {
         //todo: set up other variants in web client to avoid errors.
         log.info("Put web client id:" + id + "to webClient map");
         webClientMap.put(id, webClient);
+        graph = GraphUtils.createGraphFromMap(webClientMap);
         return webClient;
     }
 
@@ -181,6 +191,7 @@ public class CacheService {
             if (Objects.isNull(webClient)) return false;
             this.webClientMap.put(id, webClient);
         }
+        graph = GraphUtils.createGraphFromMap(webClientMap);
         return true;
     }
 
@@ -213,6 +224,7 @@ public class CacheService {
     public boolean delWebClient(final String nodeId) {
         log.info("Remove web client by id:" + nodeId);
         webClientMap.remove(nodeId);
+        graph = GraphUtils.createGraphFromMap(webClientMap);
         return true;
     }
 

@@ -123,33 +123,10 @@
                             </tr>
                           </thead>
                       <tbody>
-                        <tr>
-                          <td>A2</td>
-                          <td>57ms</td>
-                        </tr>
-                        <tr>
-                            <td>A3</td>
-                            <td>86ms</td>
-                          </tr>
-                          <tr>
-                              <td>A4</td>
-                              <td>93ms</td>
-                            </tr>
-                            <tr>
-                              <td>B1</td>
-                              <td>46ms</td>
-                            </tr>
-                            <tr>
-                                <td>B2</td>
-                                <td>75ms</td>
-                              </tr>
-                              <tr>
-                                  <td>C1</td>
-                                  <td>67ms</td>
-                                </tr>
+
                       </tbody>
                     </table>
-                    <div align="right"><button class="btn-info">刷新</button></div>
+                    <div align="right"><button class="btn-info" onclick="updateDelays()">刷新</button></div>
                 </div>
             </div>
           </div>

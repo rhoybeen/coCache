@@ -41,6 +41,10 @@ function populateResourceList(data){
 
 }
 
+function updateDelays(){
+
+}
+
 var nodes_json = {
     "nodes": [
         {

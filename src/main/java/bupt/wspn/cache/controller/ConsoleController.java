@@ -1,9 +1,12 @@
 package bupt.wspn.cache.controller;
 
+import bupt.wspn.cache.Utils.GraphUtils;
 import bupt.wspn.cache.model.ResponseEntity;
 import bupt.wspn.cache.service.CacheService;
 import bupt.wspn.cache.service.WebClient;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.graph.MutableValueGraph;
+import com.google.common.graph.ValueGraphBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -91,4 +95,25 @@ public class ConsoleController {
         return responseEntity.toJSONString();
     }
 
+    @ResponseBody
+    @RequestMapping( value = "/delays")
+    public String updateSystemDelays(){
+        log.info("Update system delays.");
+        final Map<String, Map<String,Integer>> delayMap = cacheService.retrieveNetworkDelays();
+        final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(delayMap);
+        return responseEntity.toJSONString();
+    }
+
+    @ResponseBody
+    @RequestMapping( value = "/edge")
+    public String test(){
+        GraphUtils.getSimuGraphDelays(cacheService.graph,cacheService.delayMap);
+        for(int i = 0;i<=15;i++){
+            for(int j=0;j<=15;j++){
+                System.out.print(String.valueOf((int)cacheService.delayMap[i][j]) + ' ');
+            }
+            System.out.println();
+        }
+        return cacheService.delayMap.toString();
+    }
 }

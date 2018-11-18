@@ -2,17 +2,19 @@ package bupt.wspn.cache.service;
 
 import bupt.wspn.cache.Utils.FilenameConvertor;
 import bupt.wspn.cache.Utils.HttpUtils;
-import bupt.wspn.cache.model.Node;
 import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import lombok.*;
+import com.google.common.graph.MutableValueGraph;
+import com.google.common.graph.ValueGraphBuilder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.annotation.Order;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
