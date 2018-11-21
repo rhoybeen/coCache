@@ -57,7 +57,7 @@ public class WebClient {
     private int resourceAmount;
 
     @NonNull
-    @JSONField(serialize = false)
+//    @JSONField(serialize = false)
     @Value("${slave.masterIp}")
     private String masterIp;
 
@@ -67,7 +67,6 @@ public class WebClient {
     private Map<String, Set<String>> resourceMap = new HashMap<>();
     //Map indicating delays between itself and the other nodes.
     private Map<String, Integer> delayMap = new HashMap<String, Integer>();
-
     //provide sorted video list.
     private List<Video> resources = new ArrayList<Video>();
 

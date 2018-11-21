@@ -1,20 +1,20 @@
 package bupt.wspn.cache.service;
 
 import bupt.wspn.cache.Utils.*;
-import bupt.wspn.cache.model.Edge;
-import bupt.wspn.cache.model.NodeType;
-import bupt.wspn.cache.model.RequestEntity;
+import bupt.wspn.cache.model.*;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.graph.MutableValueGraph;
-import jdk.nashorn.internal.ir.RuntimeNode;
+import com.sun.tools.javac.util.GraphUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import sun.net.util.IPAddressUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -32,17 +32,23 @@ public class CacheService {
     @Value("${slave.default_request_number}")
     public int DEFAULT_REQUEST_NUMBER;
 
+    @Value("${slave.resourceAmount}")
+    public int RESOURCE_AMOUNT;
+
     public int MAX_CLIENT_NUM = 15;
 
     public final Map<String, WebClient> webClientMap = new HashMap<>();
 
     public transient MutableValueGraph<WebClient, Edge> graph;
 
+    /**
+     * It is not reasonable to assume that all webClient id is number which can be converted into an Integer type.
+     * But here, just simplify the problem.
+     */
     public double[][] delayMap = new double[MAX_CLIENT_NUM+1][MAX_CLIENT_NUM+1];
 
     /**
      * get delays among cache nodes.
-     *
      * @return
      */
     public Map<String, Map<String, Integer>> retrieveNetworkDelays() {
@@ -55,8 +61,40 @@ public class CacheService {
      *
      * @return
      */
-    public Map<String, List<String>> updateCache() {
-        return null;
+    public void updateCache() {
+        log.info("Update system cache now.");
+        //Sync requests from every nodes
+        //Only sync from web client 1. because the other web clients are simulated in local host.
+        final WebClient webClient = getWebClientInfo(webClientMap.get("1").getIp());
+        webClientMap.put("1",webClient);
+        TopoUtils.createGraphFromMap(webClientMap);
+
+        //update network delay map
+        TopoUtils.getSimuGraphDelays(graph,delayMap);
+
+        //allocate content to corresponding node
+        Map<String,SortableClientEntity> clientEntityMap = GSAlgorithm();
+
+        //todo: calculate expected system delay
+
+        //notify web client to update their cache
+        Map<String,Set<String>> resourceMap = new HashMap<>();
+        for(SortableClientEntity clientEntity : clientEntityMap.values()){
+            final String id = clientEntity.getClientId();
+            for(SortableVideoEntity videoEntity : clientEntity.getAcceptList()){
+                Set<String> locations = resourceMap.get(videoEntity.getName());
+                if(Objects.isNull(locations)){
+                    locations = new HashSet<>();
+                    resourceMap.put(videoEntity.getName(),locations);
+                }
+                locations.add(id);
+            }
+        }
+        for(WebClient client : webClientMap.values()){
+            client.setResourceMap(resourceMap);
+        }
+        //todo: sync new resource map to client 1
+        //todo: handle counters after cache allocation.
     }
 
     public boolean bindWebClient(String jsonStr) {
@@ -65,7 +103,7 @@ public class CacheService {
             final String webClientId = webClient.getId();
             log.info("Master bind webClient " + webClientId);
             webClientMap.put(webClientId, webClient);
-            graph = GraphUtils.createGraphFromMap(webClientMap);
+            graph = TopoUtils.createGraphFromMap(webClientMap);
             return true;
         } catch (Exception e) {
             log.info("Master bind failure: " + e.toString());
@@ -79,7 +117,7 @@ public class CacheService {
             final String webClientId = webClient.getId();
             log.info("Master sync webClient " + webClientId);
             webClientMap.put(webClientId, webClient);
-            graph = GraphUtils.createGraphFromMap(webClientMap);
+            graph = TopoUtils.createGraphFromMap(webClientMap);
             return true;
         } catch (Exception e) {
             log.info("Master sync failure: " + e.toString());
@@ -88,11 +126,37 @@ public class CacheService {
     }
 
     /**
-     * Sync with client node 1.
+     * Get webClient info from a specified ip address.
+     * Return a re-constructed web client.
+     * @param ip
+     * @return
+     */
+    public WebClient getWebClientInfo(String ip){
+        if(StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
+        final RequestEntity request = RequestEntity.builder()
+                .type("UPLOAD")
+                .build();
+        try {
+            final String url = "http://" + ip + "/slave/info";
+            log.info("Send request to " + ip + " to report its details");
+            final String response = HttpUtils.sendHttpRequest(url,request);
+            final JSONObject jsonObject = JSONObject.parseObject(response);
+            final ResponseEntityHeader header = JSON.parseObject((String)jsonObject.get("header"),ResponseEntityHeader.class);
+            if(header.getIsSuccess()){
+                return JSON.parseObject((String) jsonObject.get("payload"),WebClient.class);
+            }
+        }catch (Exception e){
+            log.warn("Failed to send request to client to sync its details:" + ip);
+        }
+        return null;
+    }
+
+    /**
+     * Sync to client node 1.
      *
      * @return
      */
-    public boolean syncWithClient1() {
+    public boolean syncToWebClient1() {
         final WebClient webClient = webClientMap.get("1");
         final RequestEntity request = RequestEntity.builder()
                 .type("SYNC")
@@ -114,7 +178,7 @@ public class CacheService {
     public boolean unBindWebClient(String clientId) {
         if (webClientMap.containsKey(clientId)) {
             webClientMap.remove(clientId);
-            graph = GraphUtils.createGraphFromMap(webClientMap);
+            graph = TopoUtils.createGraphFromMap(webClientMap);
             return true;
         } else return false;
     }
@@ -157,15 +221,14 @@ public class CacheService {
             nodeType = (parent.getNodeType() == NodeType.REGIONAL_MEC) ? NodeType.MBS_MEC : NodeType.SBS_MEC;
         }
         final int capacity = Integer.valueOf(PropertyUtils.getProperty("slave." + nodeType + ".capacity"));
-        final int resouceAmount = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
         final String ip = "simulator" + id;
         final String masterIp = "localhost";
-        final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, resouceAmount, masterIp);
+        final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, RESOURCE_AMOUNT, masterIp);
         webClient.initCountersAndResources();
         //todo: set up other variants in web client to avoid errors.
         log.info("Put web client id:" + id + "to webClient map");
         webClientMap.put(id, webClient);
-        graph = GraphUtils.createGraphFromMap(webClientMap);
+        graph = TopoUtils.createGraphFromMap(webClientMap);
         return webClient;
     }
 
@@ -191,7 +254,7 @@ public class CacheService {
             if (Objects.isNull(webClient)) return false;
             this.webClientMap.put(id, webClient);
         }
-        graph = GraphUtils.createGraphFromMap(webClientMap);
+        graph = TopoUtils.createGraphFromMap(webClientMap);
         return true;
     }
 
@@ -224,7 +287,7 @@ public class CacheService {
     public boolean delWebClient(final String nodeId) {
         log.info("Remove web client by id:" + nodeId);
         webClientMap.remove(nodeId);
-        graph = GraphUtils.createGraphFromMap(webClientMap);
+        graph = TopoUtils.createGraphFromMap(webClientMap);
         return true;
     }
 
@@ -276,7 +339,7 @@ public class CacheService {
         for (final WebClient webClient : webClientMap.values()) {
             generateRequest(webClient.getId(), lamda);
         }
-        return syncWithClient1();
+        return syncToWebClient1();
     }
 
     /**
@@ -314,6 +377,105 @@ public class CacheService {
         }
         //log.info("After:" + webClient.getCounters().toString());
         return true;
+    }
+
+    //todo: make sure whether need to call updateVideoList() first.
+    //todo: the preference list sort order from high to low score.
+    public Map<String, SortableClientEntity> GSAlgorithm(){
+        Set<WebClient> webClients = graph.nodes();
+        Map<String,SortableClientEntity> clientEntityMap = new HashMap<>();
+        Map<String,SortableVideoEntity> videoEntityMap = new HashMap<>();
+        for(WebClient webClient : webClients){
+            clientEntityMap.put(webClient.getId(),new SortableClientEntity(
+                    webClient.getId(),
+                    webClient.getCapacity(),
+                    new Double(0),
+                    new HashMap<>(),
+                    new ArrayList<>()
+            ));
+        }
+        int resourceNum = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
+        for(int i=1;i<=resourceNum;i++){
+            String filename = FilenameConvertor.toStringName(i);
+            videoEntityMap.put(filename,new SortableVideoEntity(filename,
+                    new Double(0),
+                    false,
+                    new HashMap<>(),
+                    new ArrayList<>()));
+        }
+        //For each client, generate its preference list
+        for(SortableClientEntity clientEntity : clientEntityMap.values()){
+            String clientId = clientEntity.getClientId();
+            final WebClient webClient = webClientMap.get(clientId);
+            webClient.updateVideoList();
+            //The current client preference list is already in order now.
+            final List<Video> videoList = webClient.getResources();
+            for(Video video : videoList){
+                clientEntity.getPreferenceMap().put(video.name, new SortableVideoEntity(
+                   video.name,
+                   new Double(video.getClickNum()),
+                   false,
+                   null,
+                        null
+                ));
+            }
+        }
+        //For each content, generate its preference list
+        //In general, the allocation algorithm should take all nodes into consideration.
+        for(SortableVideoEntity videoEntity : videoEntityMap.values()){
+            final String contentName = videoEntity.getName();
+            for(WebClient current : webClientMap.values()){
+                double preferenceScore = 0;
+                final String currentId = current.getId();
+                for(WebClient otherClient : webClientMap.values()){
+                    final String otherId = otherClient.getId();
+                    if(currentId.equals(otherId)) continue;
+                    preferenceScore += otherClient.getCounters().get(contentName)
+                            * delayMap[Integer.valueOf(currentId)][Integer.valueOf(otherId)];
+                }
+                videoEntity.getPreferenceMap().put(currentId, new SortableClientEntity(
+                        currentId,
+                        current.getCapacity(),
+                        preferenceScore,
+                        null,
+                        null
+                ));
+            }
+//            Collections.sort(videoEntity.getPreferenceList());
+        }
+
+        while (!isAllocationFinished(clientEntityMap)){
+            for(SortableVideoEntity videoEntity : videoEntityMap.values()){
+                if(videoEntity.isAccepted()) continue;
+                final List<SortableClientEntity> videoPreferenceList = videoEntity.getPreferenceList();
+                if(!videoPreferenceList.isEmpty()){
+                    final String mostPreferredClientId = videoPreferenceList.remove(0).getClientId();
+                    final SortableClientEntity mostPreferredClient = clientEntityMap.get(mostPreferredClientId);
+                    final String rejectedId = mostPreferredClient.tryAccept(videoEntity);
+                    videoEntity.setAccepted(true);
+                    if(!StringUtils.isEmpty(rejectedId)){
+                        videoEntityMap.get(rejectedId).setAccepted(false);
+                    }
+                }
+            }
+        }
+        return clientEntityMap;
+    }
+
+    /**
+     * When all clients have reached their capacity limits or all content has been cached
+     * The allocating process is finished.
+     * @param clients
+     * @return
+     */
+    private boolean isAllocationFinished(Map<String,SortableClientEntity> clients){
+        boolean result = false;
+        int accepted = 0;
+        for(SortableClientEntity sortableClientEntity : clients.values()){
+            result &= sortableClientEntity.isFull();
+            accepted += sortableClientEntity.getAcceptList().size();
+        }
+        return result || (accepted >= RESOURCE_AMOUNT);
     }
 
     @PostConstruct

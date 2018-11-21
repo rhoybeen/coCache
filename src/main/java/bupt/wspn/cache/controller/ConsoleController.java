@@ -1,12 +1,10 @@
 package bupt.wspn.cache.controller;
 
-import bupt.wspn.cache.Utils.GraphUtils;
+import bupt.wspn.cache.Utils.TopoUtils;
 import bupt.wspn.cache.model.ResponseEntity;
 import bupt.wspn.cache.service.CacheService;
 import bupt.wspn.cache.service.WebClient;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.graph.MutableValueGraph;
-import com.google.common.graph.ValueGraphBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -70,7 +68,7 @@ public class ConsoleController {
     @RequestMapping(value = "/sync/{clientId}")
     public String syncWithClient1(@PathVariable final String clientId){
         log.info("Sync with client 1");
-        if(cacheService.syncWithClient1())
+        if(cacheService.syncToWebClient1())
             return ResponseEntity.successEntityWithPayload("Successfully sync with client 1").toJSONString();
         else
             return ResponseEntity.retryableFailEntity("Failed to sync with client 1").toJSONString();
@@ -107,7 +105,7 @@ public class ConsoleController {
     @ResponseBody
     @RequestMapping( value = "/edge")
     public String test(){
-        GraphUtils.getSimuGraphDelays(cacheService.graph,cacheService.delayMap);
+        TopoUtils.getSimuGraphDelays(cacheService.graph,cacheService.delayMap);
         for(int i = 0;i<=15;i++){
             for(int j=0;j<=15;j++){
                 System.out.print(String.valueOf((int)cacheService.delayMap[i][j]) + ' ');
