@@ -64,7 +64,7 @@ public class WebClient {
     //Map indicating resources clicks.
     private Map<String, Integer> counters = new HashMap<String, Integer>();
     //Map indicating which node resources locate.
-    private Map<String, Set<String>> resourceMap = new HashMap<>();
+    private Map<String, List<String>> resourceMap = new HashMap<>();
     //Map indicating delays between itself and the other nodes.
     private Map<String, Integer> delayMap = new HashMap<String, Integer>();
     //provide sorted video list.
@@ -97,7 +97,7 @@ public class WebClient {
         for (int i = 1; i <= resourceSize; i++) {
             final String fileNameNum = FilenameConvertor.toStringName(i);
             this.counters.put(fileNameNum, 0);
-            this.resourceMap.put(fileNameNum, new HashSet<>());
+            this.resourceMap.put(fileNameNum, new ArrayList<>());
         }
     }
 
@@ -198,7 +198,7 @@ public class WebClient {
         for (int i = 1; i <= resourceSize; i++) {
             final String fileNameNum = FilenameConvertor.toStringName(i);
             counters.put(fileNameNum, i);
-            resourceMap.put(fileNameNum, new HashSet<>());
+            resourceMap.put(fileNameNum, new ArrayList<>());
         }
     }
 }

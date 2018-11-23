@@ -35,6 +35,12 @@ public class CacheService {
     @Value("${slave.resourceAmount}")
     public int RESOURCE_AMOUNT;
 
+    @Value("${cache.delay.BASE_DELAY}")
+    public int BASE_SERVICE_DELAY;
+
+    @Value("${cache.delay.MISS_DELAY}")
+    public int MISS_DELAY;
+
     public int MAX_CLIENT_NUM = 15;
 
     public final Map<String, WebClient> webClientMap = new HashMap<>();
@@ -45,10 +51,11 @@ public class CacheService {
      * It is not reasonable to assume that all webClient id is number which can be converted into an Integer type.
      * But here, just simplify the problem.
      */
-    public double[][] delayMap = new double[MAX_CLIENT_NUM+1][MAX_CLIENT_NUM+1];
+    public double[][] delayMap = new double[MAX_CLIENT_NUM + 1][MAX_CLIENT_NUM + 1];
 
     /**
      * get delays among cache nodes.
+     *
      * @return
      */
     public Map<String, Map<String, Integer>> retrieveNetworkDelays() {
@@ -58,43 +65,51 @@ public class CacheService {
 
     /**
      * update system cache by G-S algorithm.
+     * And return the expected avg service delay.
      *
      * @return
      */
-    public void updateCache() {
+    public double updateCache(final String strategy) {
         log.info("Update system cache now.");
         //Sync requests from every nodes
         //Only sync from web client 1. because the other web clients are simulated in local host.
         final WebClient webClient = getWebClientInfo(webClientMap.get("1").getIp());
-        webClientMap.put("1",webClient);
+        webClientMap.put("1", webClient);
         TopoUtils.createGraphFromMap(webClientMap);
 
         //update network delay map
-        TopoUtils.getSimuGraphDelays(graph,delayMap);
+        TopoUtils.getSimuGraphDelays(graph, delayMap);
 
         //allocate content to corresponding node
-        Map<String,SortableClientEntity> clientEntityMap = GSAlgorithm();
-
-        //todo: calculate expected system delay
+        Map<String, SortableClientEntity> clientEntityMap = CacheUtils.updateCache(strategy,this);
 
         //notify web client to update their cache
-        Map<String,Set<String>> resourceMap = new HashMap<>();
-        for(SortableClientEntity clientEntity : clientEntityMap.values()){
+        Map<String, List<String>> resourceMap = new HashMap<>();
+        for (SortableClientEntity clientEntity : clientEntityMap.values()) {
             final String id = clientEntity.getClientId();
-            for(SortableVideoEntity videoEntity : clientEntity.getAcceptList()){
-                Set<String> locations = resourceMap.get(videoEntity.getName());
-                if(Objects.isNull(locations)){
-                    locations = new HashSet<>();
-                    resourceMap.put(videoEntity.getName(),locations);
+            for (SortableVideoEntity videoEntity : clientEntity.getAcceptList()) {
+                List<String> locations = resourceMap.get(videoEntity.getName());
+                if (Objects.isNull(locations)) {
+                    locations = new ArrayList<>();
+                    resourceMap.put(videoEntity.getName(), locations);
                 }
                 locations.add(id);
             }
         }
-        for(WebClient client : webClientMap.values()){
+        for (WebClient client : webClientMap.values()) {
             client.setResourceMap(resourceMap);
         }
-        //todo: sync new resource map to client 1
-        //todo: handle counters after cache allocation.
+
+        //Calculate expected average service delay.
+        final double expectedDelay = CacheUtils.calculateExpectedDelay(this);
+
+        //Clean up history requests for all clients.
+        cleanUpClientHistory();
+
+        //Sync new resource map to client 1.
+        syncToWebClient1();
+
+        return expectedDelay;
     }
 
     public boolean bindWebClient(String jsonStr) {
@@ -128,24 +143,25 @@ public class CacheService {
     /**
      * Get webClient info from a specified ip address.
      * Return a re-constructed web client.
+     *
      * @param ip
      * @return
      */
-    public WebClient getWebClientInfo(String ip){
-        if(StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
+    public WebClient getWebClientInfo(String ip) {
+        if (StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
         final RequestEntity request = RequestEntity.builder()
                 .type("UPLOAD")
                 .build();
         try {
             final String url = "http://" + ip + "/slave/info";
             log.info("Send request to " + ip + " to report its details");
-            final String response = HttpUtils.sendHttpRequest(url,request);
+            final String response = HttpUtils.sendHttpRequest(url, request);
             final JSONObject jsonObject = JSONObject.parseObject(response);
-            final ResponseEntityHeader header = JSON.parseObject((String)jsonObject.get("header"),ResponseEntityHeader.class);
-            if(header.getIsSuccess()){
-                return JSON.parseObject((String) jsonObject.get("payload"),WebClient.class);
+            final ResponseEntityHeader header = JSON.parseObject((String) jsonObject.get("header"), ResponseEntityHeader.class);
+            if (header.getIsSuccess()) {
+                return JSON.parseObject((String) jsonObject.get("payload"), WebClient.class);
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             log.warn("Failed to send request to client to sync its details:" + ip);
         }
         return null;
@@ -315,7 +331,7 @@ public class CacheService {
      * @return
      */
     public boolean increaseResourceCount(@NonNull final WebClient webClient, @NonNull final String videoId) {
-        final Map<String, Set<String>> resourceMap = webClient.getResourceMap();
+        final Map<String, List<String>> resourceMap = webClient.getResourceMap();
         if (!resourceMap.containsKey(videoId)) {
             log.info("Video " + videoId + " does not exist.");
             return false;
@@ -379,108 +395,15 @@ public class CacheService {
         return true;
     }
 
-    //todo: make sure whether need to call updateVideoList() first.
-    //todo: the preference list sort order from high to low score.
-    public Map<String, SortableClientEntity> GSAlgorithm(){
-        Set<WebClient> webClients = graph.nodes();
-        Map<String,SortableClientEntity> clientEntityMap = new HashMap<>();
-        Map<String,SortableVideoEntity> videoEntityMap = new HashMap<>();
-        for(WebClient webClient : webClients){
-            clientEntityMap.put(webClient.getId(),new SortableClientEntity(
-                    webClient.getId(),
-                    webClient.getCapacity(),
-                    new Double(0),
-                    new HashMap<>(),
-                    new ArrayList<>()
-            ));
+    protected void cleanUpClientHistory() {
+        for (WebClient webClient : webClientMap.values()) {
+            webClient.getCounters().clear();
         }
-        int resourceNum = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
-        for(int i=1;i<=resourceNum;i++){
-            String filename = FilenameConvertor.toStringName(i);
-            videoEntityMap.put(filename,new SortableVideoEntity(filename,
-                    new Double(0),
-                    false,
-                    new HashMap<>(),
-                    new ArrayList<>()));
-        }
-        //For each client, generate its preference list
-        for(SortableClientEntity clientEntity : clientEntityMap.values()){
-            String clientId = clientEntity.getClientId();
-            final WebClient webClient = webClientMap.get(clientId);
-            webClient.updateVideoList();
-            //The current client preference list is already in order now.
-            final List<Video> videoList = webClient.getResources();
-            for(Video video : videoList){
-                clientEntity.getPreferenceMap().put(video.name, new SortableVideoEntity(
-                   video.name,
-                   new Double(video.getClickNum()),
-                   false,
-                   null,
-                        null
-                ));
-            }
-        }
-        //For each content, generate its preference list
-        //In general, the allocation algorithm should take all nodes into consideration.
-        for(SortableVideoEntity videoEntity : videoEntityMap.values()){
-            final String contentName = videoEntity.getName();
-            for(WebClient current : webClientMap.values()){
-                double preferenceScore = 0;
-                final String currentId = current.getId();
-                for(WebClient otherClient : webClientMap.values()){
-                    final String otherId = otherClient.getId();
-                    if(currentId.equals(otherId)) continue;
-                    preferenceScore += otherClient.getCounters().get(contentName)
-                            * delayMap[Integer.valueOf(currentId)][Integer.valueOf(otherId)];
-                }
-                videoEntity.getPreferenceMap().put(currentId, new SortableClientEntity(
-                        currentId,
-                        current.getCapacity(),
-                        preferenceScore,
-                        null,
-                        null
-                ));
-            }
-//            Collections.sort(videoEntity.getPreferenceList());
-        }
-
-        while (!isAllocationFinished(clientEntityMap)){
-            for(SortableVideoEntity videoEntity : videoEntityMap.values()){
-                if(videoEntity.isAccepted()) continue;
-                final List<SortableClientEntity> videoPreferenceList = videoEntity.getPreferenceList();
-                if(!videoPreferenceList.isEmpty()){
-                    final String mostPreferredClientId = videoPreferenceList.remove(0).getClientId();
-                    final SortableClientEntity mostPreferredClient = clientEntityMap.get(mostPreferredClientId);
-                    final String rejectedId = mostPreferredClient.tryAccept(videoEntity);
-                    videoEntity.setAccepted(true);
-                    if(!StringUtils.isEmpty(rejectedId)){
-                        videoEntityMap.get(rejectedId).setAccepted(false);
-                    }
-                }
-            }
-        }
-        return clientEntityMap;
-    }
-
-    /**
-     * When all clients have reached their capacity limits or all content has been cached
-     * The allocating process is finished.
-     * @param clients
-     * @return
-     */
-    private boolean isAllocationFinished(Map<String,SortableClientEntity> clients){
-        boolean result = false;
-        int accepted = 0;
-        for(SortableClientEntity sortableClientEntity : clients.values()){
-            result &= sortableClientEntity.isFull();
-            accepted += sortableClientEntity.getAcceptList().size();
-        }
-        return result || (accepted >= RESOURCE_AMOUNT);
     }
 
     @PostConstruct
     public void initCacheService() {
         createWebClientFromConfiguration();
-   //     generateRequest(0.60);
+        //     generateRequest(0.60);
     }
 }
