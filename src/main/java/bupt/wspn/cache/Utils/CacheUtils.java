@@ -37,7 +37,7 @@ public class CacheUtils {
                 return GSAlgorithm(cacheService);
             case CACHE_STRATEGY_RANDOM_COOPERATE:
                 return randomCooperateStrategy(cacheService);
-            case  CACHE_STRATEGY_POPULARITY_NON_COOPERATE:
+            case CACHE_STRATEGY_POPULARITY_NON_COOPERATE:
                 return popularityNonCooperateStrategy(cacheService);
             case CACHE_STRATEGY_POPULARITY_COOPERATE:
                 return popularityCooperateStrategy(cacheService);
@@ -119,13 +119,13 @@ public class CacheUtils {
             Collections.sort(videoEntity.getPreferenceList());
         }
 
-        for (SortableClientEntity sortableClientEntity : clientEntityMap.values()) {
-            log.info(sortableClientEntity.toString());
-        }
-
-        for (SortableVideoEntity sortableVideoEntity : videoEntityMap.values()) {
-            log.info(sortableVideoEntity.toString());
-        }
+//        for (SortableClientEntity sortableClientEntity : clientEntityMap.values()) {
+//            log.info(sortableClientEntity.toString());
+//        }
+//
+//        for (SortableVideoEntity sortableVideoEntity : videoEntityMap.values()) {
+//            log.info(sortableVideoEntity.toString());
+//        }
 
         log.info("Allocating content.");
         while (!isAllocationFinished(clientEntityMap, cacheService)) {
@@ -234,7 +234,6 @@ public class CacheUtils {
         log.info("Start to update cache by popularityCooperateStrategy.");
         final MutableValueGraph graph = cacheService.getGraph();
         final Map<String, WebClient> webClientMap = cacheService.getWebClientMap();
-        final Set<WebClient> webClients = graph.nodes();
         final Map<String, SortableClientEntity> clientEntityMap = new HashMap<>();
 
         final Set<String> tmpSet = new HashSet<>();
@@ -251,7 +250,8 @@ public class CacheUtils {
             final List<SortableVideoEntity> acceptList = currentClientEntity.getAcceptList();
             final int capacity = webClient.getCapacity();
             int startIndex = 0;
-            while (sortedList.size() < capacity && startIndex < sortedList.size()) {
+            log.info("sortedList size" + sortedList.size() + "capacity:" + capacity);
+            while (acceptList.size() < capacity && startIndex < sortedList.size()) {
                 Video currentVideo = sortedList.get(startIndex);
                 while (tmpSet.contains(currentVideo.getName()) && startIndex < sortedList.size()) {
                     startIndex++;
@@ -264,10 +264,15 @@ public class CacheUtils {
                         null,
                         null
                 ));
+                startIndex++;
                 tmpSet.add(currentVideo.getName());
             }
             clientEntityMap.put(webClient.getId(), currentClientEntity);
         }
+        for (SortableClientEntity sortableClientEntity : clientEntityMap.values()) {
+            log.info(sortableClientEntity.toString());
+        }
+
         log.info("Finish updating cache by popularityCooperateStrategy.");
         return clientEntityMap;
     }
@@ -291,12 +296,49 @@ public class CacheUtils {
         return result || (accepted >= cacheService.RESOURCE_AMOUNT);
     }
 
-    public static double calculateExpectedDelay(CacheService cacheService) {
+    public static Map<String, Double> calculateExpectedStrategyDelay(final CacheService cacheService) {
+        final Map<String, Double> expectedDelayMap = new HashMap<>();
+
+        final Map<String, List<String>> resourceMap_gs = generateResourceMap(cacheService, GSAlgorithm(cacheService));
+        final double delay_ds = calculateExpectedDelay(cacheService, resourceMap_gs);
+        expectedDelayMap.put(CACHE_STRATEGY_GS_ALGORITHM, delay_ds);
+
+        final Map<String, List<String>> resourceMap_random = generateResourceMap(cacheService, randomCooperateStrategy(cacheService));
+        final double delay_random = calculateExpectedDelay(cacheService, resourceMap_random);
+        expectedDelayMap.put(CACHE_STRATEGY_RANDOM_COOPERATE, delay_random);
+
+        final Map<String, List<String>> resourceMap_pop_non = generateResourceMap(cacheService, popularityNonCooperateStrategy(cacheService));
+        final double delay_pop_non = calculateExpectedDelay(cacheService, resourceMap_pop_non);
+        expectedDelayMap.put(CACHE_STRATEGY_POPULARITY_NON_COOPERATE, delay_pop_non);
+
+        final Map<String, List<String>> resourceMap_pop_co = generateResourceMap(cacheService, popularityCooperateStrategy(cacheService));
+        final double delay_pop_co = calculateExpectedDelay(cacheService, resourceMap_pop_co);
+        expectedDelayMap.put(CACHE_STRATEGY_POPULARITY_COOPERATE, delay_pop_co);
+
+        return expectedDelayMap;
+    }
+
+    public static Map<String, List<String>> generateResourceMap(CacheService cacheService, Map<String, SortableClientEntity> clientEntityMap) {
+        final Map<String, List<String>> resourceMap = new HashMap<>();
+        for (int i = 1; i <= cacheService.RESOURCE_AMOUNT; i++) {
+            resourceMap.put(FilenameConvertor.toStringName(i), new ArrayList<>());
+        }
+        for (SortableClientEntity clientEntity : clientEntityMap.values()) {
+            final String id = clientEntity.getClientId();
+            for (SortableVideoEntity videoEntity : clientEntity.getAcceptList()) {
+                List<String> locations = resourceMap.get(videoEntity.getName());
+                locations.add(id);
+            }
+        }
+        return resourceMap;
+    }
+
+    public static double calculateExpectedDelay(CacheService cacheService, Map<String, List<String>> resourceMap) {
         final Map<String, WebClient> webClientMap = cacheService.getWebClientMap();
-        final Map<String, List<String>> resourceMap = webClientMap.get("1").getResourceMap();
         final double[][] delayMap = cacheService.delayMap;
         double serviceDelay = 0.0;
         long count = 0;
+        long missCount = 0;
         for (WebClient webClient : webClientMap.values()) {
             final Map<String, Integer> counters = webClient.getCounters();
             for (String contentName : counters.keySet()) {
@@ -304,13 +346,22 @@ public class CacheUtils {
                 count += requestNum;
                 final List<String> locationSet = resourceMap.get(contentName);
                 if (Objects.isNull(locationSet) || locationSet.isEmpty()) {
-                    serviceDelay += (cacheService.MISS_DELAY * count);
+                    serviceDelay += (cacheService.MISS_DELAY * requestNum);
+                    missCount += requestNum;
                 } else {
-                    serviceDelay += (delayMap[Integer.valueOf(webClient.getId())][Integer.valueOf(locationSet.get(0))]
-                            + cacheService.BASE_SERVICE_DELAY) * count;
+                    int currentIndex = Integer.valueOf(webClient.getId());
+                    int cachedIndex = Integer.valueOf(locationSet.get(0));
+                    if (locationSet.size() > 1) {
+                        for (String s : locationSet) {
+                            if (Integer.valueOf(s) == currentIndex) cachedIndex = currentIndex;
+                        }
+                    }
+                    serviceDelay += (delayMap[currentIndex][cachedIndex]
+                            + cacheService.BASE_SERVICE_DELAY) * requestNum;
                 }
             }
         }
+        log.info("Total service delay:" + serviceDelay + " total/miss:" + count + "/" + missCount);
         return serviceDelay / count;
     }
 }

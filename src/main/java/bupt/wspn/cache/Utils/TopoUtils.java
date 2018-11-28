@@ -121,7 +121,7 @@ public class TopoUtils {
                                       @NonNull WebClient pre,
                                       @NonNull WebClient cur,
                                       double delay) {
-        log.info("Calc edge between" + start.getId() + "  " + cur.getId());
+//        log.info("Calc edge between" + start.getId() + "  " + cur.getId());
         Edge edge = (Edge) graph.edgeValue(pre, cur).get();
         double edgeDelay = getSimuEdgeDelay(edge);
         delay += edgeDelay;
@@ -130,9 +130,9 @@ public class TopoUtils {
         delayMap[startId][curId] = delay;
         Set<WebClient> webClients = graph.adjacentNodes(cur);
         if (Objects.nonNull(webClients)) {
-            log.info("Removing " + pre.getId());
-            log.info(String.valueOf(webClients.size()));
-            log.info(String.valueOf(Objects.isNull(pre)));
+//            log.info("Removing " + pre.getId());
+//            log.info(String.valueOf(webClients.size()));
+//            log.info(String.valueOf(Objects.isNull(pre)));
             for (WebClient webClient : webClients) {
                 if (webClient.getId() == pre.getId()) continue;
                 traversalGraph(graph, delayMap, start, cur, webClient, delay);

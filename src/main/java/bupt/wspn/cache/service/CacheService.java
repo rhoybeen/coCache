@@ -12,8 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import sun.net.util.IPAddressUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -81,33 +79,21 @@ public class CacheService {
 
         //allocate content to corresponding node
         Map<String, SortableClientEntity> clientEntityMap = CacheUtils.updateCache(strategy,this);
-
         //notify web client to update their cache
-        Map<String, List<String>> resourceMap = new HashMap<>();
-        for (SortableClientEntity clientEntity : clientEntityMap.values()) {
-            final String id = clientEntity.getClientId();
-            for (SortableVideoEntity videoEntity : clientEntity.getAcceptList()) {
-                List<String> locations = resourceMap.get(videoEntity.getName());
-                if (Objects.isNull(locations)) {
-                    locations = new ArrayList<>();
-                    resourceMap.put(videoEntity.getName(), locations);
-                }
-                locations.add(id);
-            }
-        }
+        Map<String, List<String>> resourceMap = CacheUtils.generateResourceMap(this,clientEntityMap);
         log.info("Resource map : " + resourceMap.toString());
         for (WebClient client : webClientMap.values()) {
             client.setResourceMap(resourceMap);
         }
         //Calculate expected average service delay.
-        final double expectedDelay = CacheUtils.calculateExpectedDelay(this);
+        final Map<String,Double> expectedDelayMap = CacheUtils.calculateExpectedStrategyDelay(this);
         //Clean up history requests for all clients.
         cleanUpClientHistory();
         //Sync new resource map to client 1.
         syncToWebClient1();
-        res.put("expectedDelay",expectedDelay);
-        res.put("webClients",webClientMap.values());
-        res.put("resourceMap",resourceMap);
+        res.put("expectedDelay",expectedDelayMap);
+//        res.put("webClients",webClientMap.values());
+//        res.put("resourceMap",resourceMap);
         res.put("delayMap",delayMap);
         return res;
     }
