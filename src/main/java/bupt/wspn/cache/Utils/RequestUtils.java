@@ -28,7 +28,7 @@ public class RequestUtils {
         final ZipfDistribution zipfDistribution = new ZipfDistribution(DEFAULT_RESOURCE_AMOUNT,lamda);
         for(int i=0;i<count;i++){
             int sample = zipfDistribution.sample();
-            if(sample < pivot){
+            if(sample <= pivot){
                 sample = pivot - sample + 1;
             }
             res.add(FilenameConvertor.toStringName(sample));

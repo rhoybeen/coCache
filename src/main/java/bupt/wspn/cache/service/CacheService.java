@@ -5,7 +5,6 @@ import bupt.wspn.cache.model.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.graph.MutableValueGraph;
-import com.sun.tools.javac.util.GraphUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -59,7 +58,6 @@ public class CacheService {
      * @return
      */
     public Map<String, Map<String, Integer>> retrieveNetworkDelays() {
-
         return null;
     }
 
@@ -69,8 +67,9 @@ public class CacheService {
      *
      * @return
      */
-    public double updateCache(final String strategy) {
+    public Map<String,Object> updateCache(final String strategy) {
         log.info("Update system cache now.");
+        final Map<String,Object> res = new HashMap<>();
         //Sync requests from every nodes
         //Only sync from web client 1. because the other web clients are simulated in local host.
         final WebClient webClient = getWebClientInfo(webClientMap.get("1").getIp());
@@ -96,20 +95,21 @@ public class CacheService {
                 locations.add(id);
             }
         }
+        log.info("Resource map : " + resourceMap.toString());
         for (WebClient client : webClientMap.values()) {
             client.setResourceMap(resourceMap);
         }
-
         //Calculate expected average service delay.
         final double expectedDelay = CacheUtils.calculateExpectedDelay(this);
-
         //Clean up history requests for all clients.
         cleanUpClientHistory();
-
         //Sync new resource map to client 1.
         syncToWebClient1();
-
-        return expectedDelay;
+        res.put("expectedDelay",expectedDelay);
+        res.put("webClients",webClientMap.values());
+        res.put("resourceMap",resourceMap);
+        res.put("delayMap",delayMap);
+        return res;
     }
 
     public boolean bindWebClient(String jsonStr) {
@@ -147,8 +147,8 @@ public class CacheService {
      * @param ip
      * @return
      */
-    public WebClient getWebClientInfo(String ip) {
-        if (StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
+    public WebClient getWebClientInfo(@NonNull String ip) {
+    //    if (StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
         final RequestEntity request = RequestEntity.builder()
                 .type("UPLOAD")
                 .build();
@@ -157,11 +157,12 @@ public class CacheService {
             log.info("Send request to " + ip + " to report its details");
             final String response = HttpUtils.sendHttpRequest(url, request);
             final JSONObject jsonObject = JSONObject.parseObject(response);
-            final ResponseEntityHeader header = JSON.parseObject((String) jsonObject.get("header"), ResponseEntityHeader.class);
-            if (header.getIsSuccess()) {
-                return JSON.parseObject((String) jsonObject.get("payload"), WebClient.class);
+            final Boolean isSuccess = jsonObject.getBoolean("isSuccess");
+            if (isSuccess) {
+                return JSON.parseObject(jsonObject.getString("payload"), WebClient.class);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             log.warn("Failed to send request to client to sync its details:" + ip);
         }
         return null;
@@ -240,7 +241,7 @@ public class CacheService {
         final String ip = "simulator" + id;
         final String masterIp = "localhost";
         final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, RESOURCE_AMOUNT, masterIp);
-        webClient.initCountersAndResources();
+        webClient.initCountersAndResources(true);
         //todo: set up other variants in web client to avoid errors.
         log.info("Put web client id:" + id + "to webClient map");
         webClientMap.put(id, webClient);
@@ -354,6 +355,11 @@ public class CacheService {
         log.info("Generate requests for all webClients.");
         for (final WebClient webClient : webClientMap.values()) {
             generateRequest(webClient.getId(), lamda);
+            int count = 0;
+            for(int i : webClient.getCounters().values()){
+                count += i;
+            }
+            log.info("Client " + webClient.getId() + " current request number " + count);
         }
         return syncToWebClient1();
     }
@@ -366,28 +372,15 @@ public class CacheService {
      * @return
      */
     public boolean generateRequest(@NonNull final String nodeId, final double lamda) {
-        return generateRequest(nodeId, lamda, DEFAULT_REQUEST_NUMBER);
-    }
-
-    /**
-     * Generate request for specified web client by a certain request number.
-     *
-     * @param nodeId
-     * @param lamda
-     * @param requestNum
-     * @return
-     */
-    public boolean generateRequest(@NonNull final String nodeId, final double lamda, final int requestNum) {
         log.info("Generate requests for webClient " + nodeId + " with parameter:" + lamda);
         final WebClient webClient = webClientMap.get(nodeId);
         if (Objects.isNull(webClient)) {
             log.info("No such webClient " + nodeId);
             return false;
         }
-        final Map<String, Integer> counters = webClient.getCounters();
-        counters.clear();
+        webClient.initCountersAndResources(false);
         final List<String> requests = RequestUtils.getRequestId(lamda, true);
-        log.info(requests.toString());
+        log.info("Generate request for node id: " + nodeId + " with number " + requests.size());
         for (String requestId : requests) {
             increaseResourceCount(webClient, requestId);
         }
@@ -397,7 +390,7 @@ public class CacheService {
 
     protected void cleanUpClientHistory() {
         for (WebClient webClient : webClientMap.values()) {
-            webClient.getCounters().clear();
+            webClient.initCountersAndResources(false);
         }
     }
 

@@ -107,7 +107,7 @@ public class TopoUtils {
         Set<WebClient> webClients = graph.nodes();
         for (WebClient webClient : webClients) {
             //剪枝，只计算SBS节点间的时延
-            if (webClient.getNodeType() != NodeType.SBS_MEC) continue;
+            //if (webClient.getNodeType() != NodeType.SBS_MEC) continue;
             Set<WebClient> adjacentNodes = graph.adjacentNodes(webClient);
             for (WebClient adjacentNode : adjacentNodes) {
                 traversalGraph(graph, delayMap, webClient, webClient, adjacentNode, 0);

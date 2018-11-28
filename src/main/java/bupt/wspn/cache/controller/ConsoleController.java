@@ -35,6 +35,10 @@ public class ConsoleController {
         return modelAndView;
     }
 
+    /**
+     * Get cache service detailed info.
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value = "/info")
     public String getInfo(){
@@ -42,6 +46,12 @@ public class ConsoleController {
         return ResponseEntity.successEntityWithPayload(cacheService).toJSONString();
     }
 
+    /**
+     * Bind client to cache service
+     * @param params
+     * @param request
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value = "/bind")
     public String bind(@RequestBody String params, HttpServletRequest request) {
@@ -53,6 +63,12 @@ public class ConsoleController {
         return String.valueOf(res);
     }
 
+    /**
+     * Sync with web client.
+     * @param params
+     * @param request
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value = "/sync")
     public String sync(@RequestBody String params, HttpServletRequest request){
@@ -84,6 +100,10 @@ public class ConsoleController {
         return String.valueOf(res);
     }
 
+    /**
+     * Get all web clients info in cache service.
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value = "/nodes")
     public String retrieveCoCacheNodes(){
@@ -93,6 +113,10 @@ public class ConsoleController {
         return responseEntity.toJSONString();
     }
 
+    /**
+     * Update system delay map.
+     * @return
+     */
     @ResponseBody
     @RequestMapping( value = "/delays")
     public String updateSystemDelays(){
@@ -103,8 +127,25 @@ public class ConsoleController {
     }
 
     @ResponseBody
+    @RequestMapping(value = "/cache/update/{strategy}")
+    public String updateCache(@PathVariable final String strategy){
+        log.info("Update system cache by strategy:" + strategy);
+        final Map<String,Object> result = cacheService.updateCache(strategy);
+        final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(result);
+        return responseEntity.toJSONString();
+    }
+
+    /**
+     * Test function to be removed.
+     * @return
+     */
+    //todo: it should be well returned.
+    @ResponseBody
     @RequestMapping( value = "/edge")
     public String test(){
+        for(WebClient webClient: cacheService.webClientMap.values()){
+            webClient.updateVideoList();
+        }
         TopoUtils.getSimuGraphDelays(cacheService.graph,cacheService.delayMap);
         for(int i = 0;i<=15;i++){
             for(int j=0;j<=15;j++){
@@ -114,4 +155,5 @@ public class ConsoleController {
         }
         return cacheService.delayMap.toString();
     }
+
 }

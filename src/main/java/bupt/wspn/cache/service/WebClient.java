@@ -6,9 +6,6 @@ import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.google.common.graph.MutableValueGraph;
-import com.google.common.graph.ValueGraphBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -86,18 +83,18 @@ public class WebClient {
         this.capacity = capacity;
         this.resourceAmount = resourceAmount;
         this.masterIp = masterIp;
-        initCountersAndResources();
+        initCountersAndResources(true);
     }
 
     /**
      * Init counters and resourceMap
      */
-    public void initCountersAndResources() {
+    public void initCountersAndResources(boolean initResources) {
         final int resourceSize = this.resourceAmount;
         for (int i = 1; i <= resourceSize; i++) {
             final String fileNameNum = FilenameConvertor.toStringName(i);
             this.counters.put(fileNameNum, 0);
-            this.resourceMap.put(fileNameNum, new ArrayList<>());
+            if(initResources) this.resourceMap.put(fileNameNum, new ArrayList<>());
         }
     }
 
@@ -171,7 +168,6 @@ public class WebClient {
         this.counters = webClient.counters;
         this.delayMap = webClient.delayMap;
         log.info("Sync from master cache server " + webStr);
-        log.info("Client 1 counters:" + this.getCounters().toString());
         return true;
     }
 

@@ -6,19 +6,23 @@ import bupt.wspn.cache.model.Video;
 import bupt.wspn.cache.service.CacheService;
 import bupt.wspn.cache.service.WebClient;
 import com.google.common.graph.MutableValueGraph;
+import com.sun.org.apache.regexp.internal.RE;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
-import sun.rmi.transport.ObjectTable;
 
 import java.util.*;
 
+@Slf4j
 public class CacheUtils {
 
     public static final String CACHE_STRATEGY_GS_ALGORITHM = "GS";
 
     public static final String CACHE_STRATEGY_RANDOM_COOPERATE = "RAN_CO";
 
+    //every content may keep more than one copies in the cooperating system
     public static final String CACHE_STRATEGY_POPULARITY_NON_COOPERATE = "POP_NON_CO";
 
+    //every content only keep at most one copy in the system
     public static final String CACHE_STRATEGY_POPULARITY_COOPERATE = "POP_CO";
 
     /**
@@ -31,6 +35,12 @@ public class CacheUtils {
         switch (method) {
             case CACHE_STRATEGY_GS_ALGORITHM:
                 return GSAlgorithm(cacheService);
+            case CACHE_STRATEGY_RANDOM_COOPERATE:
+                return randomCooperateStrategy(cacheService);
+            case  CACHE_STRATEGY_POPULARITY_NON_COOPERATE:
+                return popularityNonCooperateStrategy(cacheService);
+            case CACHE_STRATEGY_POPULARITY_COOPERATE:
+                return popularityCooperateStrategy(cacheService);
             default:
                 return new HashMap<String, SortableClientEntity>();
         }
@@ -39,6 +49,7 @@ public class CacheUtils {
     //todo: make sure whether need to call updateVideoList() first.
     //todo: the preference list sort order from high to low score.
     public static Map<String, SortableClientEntity> GSAlgorithm(final CacheService cacheService) {
+        log.info("Start to update cache by GS strategy.");
         final MutableValueGraph graph = cacheService.getGraph();
         final double[][] delayMap = cacheService.getDelayMap();
         final Map<String, WebClient> webClientMap = cacheService.getWebClientMap();
@@ -64,6 +75,7 @@ public class CacheUtils {
                     new ArrayList<>()));
         }
         //For each client, generate its preference list
+        log.info("Generating preference list for every client.");
         for (SortableClientEntity clientEntity : clientEntityMap.values()) {
             String clientId = clientEntity.getClientId();
             final WebClient webClient = webClientMap.get(clientId);
@@ -82,6 +94,7 @@ public class CacheUtils {
         }
         //For each content, generate its preference list
         //In general, the allocation algorithm should take all nodes into consideration.
+        log.info("Generating preference list for every content");
         for (SortableVideoEntity videoEntity : videoEntityMap.values()) {
             final String contentName = videoEntity.getName();
             for (WebClient current : webClientMap.values()) {
@@ -93,21 +106,33 @@ public class CacheUtils {
                     preferenceScore += otherClient.getCounters().get(contentName)
                             * delayMap[Integer.valueOf(currentId)][Integer.valueOf(otherId)];
                 }
-                videoEntity.getPreferenceMap().put(currentId, new SortableClientEntity(
+                final SortableClientEntity tmpClient = new SortableClientEntity(
                         currentId,
                         current.getCapacity(),
                         preferenceScore,
                         null,
                         null
-                ));
+                );
+                videoEntity.getPreferenceMap().put(currentId, tmpClient);
+                videoEntity.getPreferenceList().add(tmpClient);
             }
-//            Collections.sort(videoEntity.getPreferenceList());
+            Collections.sort(videoEntity.getPreferenceList());
         }
 
+        for (SortableClientEntity sortableClientEntity : clientEntityMap.values()) {
+            log.info(sortableClientEntity.toString());
+        }
+
+        for (SortableVideoEntity sortableVideoEntity : videoEntityMap.values()) {
+            log.info(sortableVideoEntity.toString());
+        }
+
+        log.info("Allocating content.");
         while (!isAllocationFinished(clientEntityMap, cacheService)) {
             for (SortableVideoEntity videoEntity : videoEntityMap.values()) {
                 if (videoEntity.isAccepted()) continue;
                 final List<SortableClientEntity> videoPreferenceList = videoEntity.getPreferenceList();
+                //log.info(videoPreferenceList.size() + " ");
                 if (!videoPreferenceList.isEmpty()) {
                     final String mostPreferredClientId = videoPreferenceList.remove(0).getClientId();
                     final SortableClientEntity mostPreferredClient = clientEntityMap.get(mostPreferredClientId);
@@ -119,57 +144,131 @@ public class CacheUtils {
                 }
             }
         }
+        for (SortableClientEntity sortableClientEntity : clientEntityMap.values()) {
+            log.info(sortableClientEntity.getAcceptListString());
+        }
+        log.info("Allocation finished.");
         return clientEntityMap;
     }
 
     /**
      * Update cache by random strategy.
+     *
      * @param cacheService
      * @return
      */
-    public static Map<String, SortableClientEntity> RandomCooperateStrategy(final CacheService cacheService){
+    public static Map<String, SortableClientEntity> randomCooperateStrategy(final CacheService cacheService) {
+        log.info("Start to update cache by randomCooperateStrategy.");
         final MutableValueGraph graph = cacheService.getGraph();
         final Map<String, WebClient> webClientMap = cacheService.getWebClientMap();
         final Set<WebClient> webClients = graph.nodes();
-        final Map<String,SortableClientEntity> clientEntityMap = new HashMap<>();
+        final Map<String, SortableClientEntity> clientEntityMap = new HashMap<>();
 
-        int totalResourceSize = 0;
+        int resourceNum = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
+        Set<Integer> tmpSet = new HashSet<>();
+        Random random = new Random();
         for (WebClient webClient : webClients) {
-            clientEntityMap.put(webClient.getId(), new SortableClientEntity(
+            final SortableClientEntity currentClient = new SortableClientEntity(
                     webClient.getId(),
                     webClient.getCapacity(),
                     new Double(0),
                     new HashMap<>(),
                     new ArrayList<>()
-            ));
-            totalResourceSize += webClient.getCapacity();
+            );
+            clientEntityMap.put(webClient.getId(), currentClient);
+            final List<SortableVideoEntity> acceptList = currentClient.getAcceptList();
+            final int capacity = currentClient.getCapacity();
+            while (acceptList.size() < capacity && tmpSet.size() < resourceNum) {
+                int candidate = random.nextInt(resourceNum) + 1;
+                while (tmpSet.contains(candidate)) candidate = random.nextInt(resourceNum) + 1;
+                acceptList.add(new SortableVideoEntity(
+                        FilenameConvertor.toStringName(candidate),
+                        new Double(0),
+                        true,
+                        null,
+                        null
+                ));
+                tmpSet.add(candidate);
+            }
         }
-        int resourceNum = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
-        Random random = new Random();
-        Set<Integer> resultSet = new HashSet<>();
-        while(resultSet.size()<resourceNum){
-            resultSet.add(random.nextInt(cacheService.getRESOURCE_AMOUNT())+1);
-        }
-        final Iterator iterator = clientEntityMap.values().iterator();
-        SortableClientEntity currentClientEntity = null;
+        log.info("Finish updating cache by randomCooperateStrategy.");
+        return clientEntityMap;
+    }
 
-        for(int content : resultSet){
-            if(currentClientEntity==null && iterator.hasNext()){
-                currentClientEntity = (SortableClientEntity) iterator.next();
-            }
-            final List acceptList = currentClientEntity.getAcceptList();
-            if(acceptList.size() >= currentClientEntity.getCapacity()){
-                currentClientEntity = (SortableClientEntity) iterator.next();
-                if(Objects.isNull(currentClientEntity)) break;
-            }
-            currentClientEntity.getAcceptList().add(new SortableVideoEntity(
-                    FilenameConvertor.toStringName(content),
+    public static Map<String, SortableClientEntity> popularityNonCooperateStrategy(final CacheService cacheService) {
+        log.info("Start to update cache by popularityNonCooperateStrategy.");
+        final MutableValueGraph graph = cacheService.getGraph();
+        final Map<String, WebClient> webClientMap = cacheService.getWebClientMap();
+        final Set<WebClient> webClients = graph.nodes();
+        final Map<String, SortableClientEntity> clientEntityMap = new HashMap<>();
+
+        for (WebClient webClient : webClientMap.values()) {
+            final SortableClientEntity currentClient = new SortableClientEntity(
+                    webClient.getId(),
+                    webClient.getCapacity(),
                     new Double(0),
-                    true,
-                    null,
-                    null
-            ));
+                    new HashMap<>(),
+                    new ArrayList<>()
+            );
+            final List<SortableVideoEntity> acceptList = currentClient.getAcceptList();
+            final int capacity = webClient.getCapacity();
+            webClient.updateVideoList();
+            final List<Video> sortedList = webClient.getResources();
+            for (int i = 0; i < capacity; i++) {
+                final Video currentVideo = sortedList.get(i);
+                acceptList.add(new SortableVideoEntity(
+                        currentVideo.getName(),
+                        new Double(currentVideo.getClickNum()),
+                        false,
+                        null,
+                        null
+                ));
+            }
+            clientEntityMap.put(webClient.getId(), currentClient);
         }
+        log.info("Finish updating cache by popularityNonCooperateStrategy.");
+        return clientEntityMap;
+    }
+
+    public static Map<String, SortableClientEntity> popularityCooperateStrategy(final CacheService cacheService) {
+        log.info("Start to update cache by popularityCooperateStrategy.");
+        final MutableValueGraph graph = cacheService.getGraph();
+        final Map<String, WebClient> webClientMap = cacheService.getWebClientMap();
+        final Set<WebClient> webClients = graph.nodes();
+        final Map<String, SortableClientEntity> clientEntityMap = new HashMap<>();
+
+        final Set<String> tmpSet = new HashSet<>();
+        for (final WebClient webClient : webClientMap.values()) {
+            webClient.updateVideoList();
+            final SortableClientEntity currentClientEntity = new SortableClientEntity(
+                    webClient.getId(),
+                    webClient.getCapacity(),
+                    new Double(0),
+                    new HashMap<>(),
+                    new ArrayList<>()
+            );
+            final List<Video> sortedList = webClient.getResources();
+            final List<SortableVideoEntity> acceptList = currentClientEntity.getAcceptList();
+            final int capacity = webClient.getCapacity();
+            int startIndex = 0;
+            while (sortedList.size() < capacity && startIndex < sortedList.size()) {
+                Video currentVideo = sortedList.get(startIndex);
+                while (tmpSet.contains(currentVideo.getName()) && startIndex < sortedList.size()) {
+                    startIndex++;
+                    currentVideo = sortedList.get(startIndex);
+                }
+                acceptList.add(new SortableVideoEntity(
+                        currentVideo.getName(),
+                        new Double(currentVideo.getClickNum()),
+                        true,
+                        null,
+                        null
+                ));
+                tmpSet.add(currentVideo.getName());
+            }
+            clientEntityMap.put(webClient.getId(), currentClientEntity);
+        }
+        log.info("Finish updating cache by popularityCooperateStrategy.");
         return clientEntityMap;
     }
 
@@ -182,12 +281,13 @@ public class CacheUtils {
      */
     public static boolean isAllocationFinished(Map<String, SortableClientEntity> clients,
                                                CacheService cacheService) {
-        boolean result = false;
+        boolean result = true;
         int accepted = 0;
         for (SortableClientEntity sortableClientEntity : clients.values()) {
             result &= sortableClientEntity.isFull();
             accepted += sortableClientEntity.getAcceptList().size();
         }
+        //    log.info(String.valueOf(result) + "  " + String.valueOf(accepted));
         return result || (accepted >= cacheService.RESOURCE_AMOUNT);
     }
 
