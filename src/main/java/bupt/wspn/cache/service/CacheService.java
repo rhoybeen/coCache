@@ -65,9 +65,9 @@ public class CacheService {
      *
      * @return
      */
-    public Map<String,Object> updateCache(final String strategy) {
+    public Map<String, Object> updateCache(final String strategy) {
         log.info("Update system cache now.");
-        final Map<String,Object> res = new HashMap<>();
+        final Map<String, Object> res = new HashMap<>();
         //Sync requests from every nodes
         //Only sync from web client 1. because the other web clients are simulated in local host.
         final WebClient webClient = getWebClientInfo(webClientMap.get("1").getIp());
@@ -78,23 +78,49 @@ public class CacheService {
         TopoUtils.getSimuGraphDelays(graph, delayMap);
 
         //allocate content to corresponding node
-        Map<String, SortableClientEntity> clientEntityMap = CacheUtils.updateCache(strategy,this);
+        Map<String, SortableClientEntity> clientEntityMap = CacheUtils.updateCache(strategy, this);
         //notify web client to update their cache
-        Map<String, List<String>> resourceMap = CacheUtils.generateResourceMap(this,clientEntityMap);
+        Map<String, List<String>> resourceMap = CacheUtils.generateResourceMap(this, clientEntityMap);
         log.info("Resource map : " + resourceMap.toString());
         for (WebClient client : webClientMap.values()) {
-            client.setResourceMap(resourceMap);
+            final Map<String, List<String>> map = new HashMap<>();
+            for (Map.Entry entry : resourceMap.entrySet()) {
+                final String key = (String) entry.getKey();
+                final List<String> locations = (ArrayList<String>) entry.getValue();
+                final List<String> copyTo = new ArrayList<>();
+                for (String item : locations) {
+                    copyTo.add(item);
+                }
+                map.put(key, copyTo);
+            }
+            client.setResourceMap(map);
         }
         //Calculate expected average service delay.
-        final Map<String,Double> expectedDelayMap = CacheUtils.calculateExpectedStrategyDelay(this);
+        final Map<String, Double> expectedDelayMap = CacheUtils.calculateExpectedStrategyDelay(this);
         //Clean up history requests for all clients.
         cleanUpClientHistory();
         //Sync new resource map to client 1.
         syncToWebClient1();
-        res.put("expectedDelay",expectedDelayMap);
-//        res.put("webClients",webClientMap.values());
-//        res.put("resourceMap",resourceMap);
-        res.put("delayMap",delayMap);
+        res.put("expectedDelay", expectedDelayMap);
+        res.put("webClients", webClientMap.values());
+        res.put("resourceMap", resourceMap);
+        res.put("delayMap", delayMap);
+        return res;
+    }
+
+    public Map<String,Object> evaluateCacheStrategies(){
+        log.info("Evaluate cache strategies now.");
+        final Map<String, Object> res = new HashMap<>();
+        //Sync requests from every nodes
+        //Only sync from web client 1. because the other web clients are simulated in local host.
+        final WebClient webClient = getWebClientInfo(webClientMap.get("1").getIp());
+        webClientMap.put("1", webClient);
+        TopoUtils.createGraphFromMap(webClientMap);
+        //update network delay map
+        TopoUtils.getSimuGraphDelays(graph, delayMap);
+        //Calculate expected average service delay.
+        final Map<String, Double> expectedDelayMap = CacheUtils.calculateExpectedStrategyDelay(this);
+        res.put("expectedDelay", expectedDelayMap);
         return res;
     }
 
@@ -134,7 +160,7 @@ public class CacheService {
      * @return
      */
     public WebClient getWebClientInfo(@NonNull String ip) {
-    //    if (StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
+        //    if (StringUtils.isEmpty(ip) || !IPAddressUtil.isIPv4LiteralAddress(ip)) return null;
         final RequestEntity request = RequestEntity.builder()
                 .type("UPLOAD")
                 .build();
@@ -342,7 +368,28 @@ public class CacheService {
         for (final WebClient webClient : webClientMap.values()) {
             generateRequest(webClient.getId(), lamda);
             int count = 0;
-            for(int i : webClient.getCounters().values()){
+            for (int i : webClient.getCounters().values()) {
+                count += i;
+            }
+            log.info("Client " + webClient.getId() + " current request number " + count);
+        }
+        return syncToWebClient1();
+    }
+
+    public boolean generateRequestByClientType(final String nodeType, final double lamda) {
+        log.info("Generate requests for edge web clients.");
+        NodeType type;
+        try {
+            type = NodeType.valueOf(nodeType);
+        } catch (IllegalArgumentException e) {
+            log.info(nodeType + "is not supported node type");
+            return false;
+        }
+        for (final WebClient webClient : webClientMap.values()) {
+            if (webClient.getNodeType() != type) continue;
+            generateRequest(webClient.getId(), lamda);
+            int count = 0;
+            for (int i : webClient.getCounters().values()) {
                 count += i;
             }
             log.info("Client " + webClient.getId() + " current request number " + count);
@@ -374,10 +421,11 @@ public class CacheService {
         return true;
     }
 
-    protected void cleanUpClientHistory() {
+    public boolean cleanUpClientHistory() {
         for (WebClient webClient : webClientMap.values()) {
             webClient.initCountersAndResources(false);
         }
+        return true;
     }
 
     @PostConstruct

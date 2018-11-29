@@ -135,6 +135,15 @@ public class ConsoleController {
         return responseEntity.toJSONString();
     }
 
+    @ResponseBody
+    @RequestMapping(value = "/cache/evaluate")
+    public String evaluateCacheStrategies(){
+        log.info("Evaluate cache strategies.");
+        final Map<String,Object> result = cacheService.evaluateCacheStrategies();
+        final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(result);
+        return responseEntity.toJSONString();
+    }
+
     /**
      * Test function to be removed.
      * @return

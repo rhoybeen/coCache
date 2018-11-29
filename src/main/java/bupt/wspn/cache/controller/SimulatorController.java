@@ -76,6 +76,16 @@ public class SimulatorController {
     }
 
     @ResponseBody
+    @RequestMapping(value = "/request/type/{nodeType}/arg/{lamda:.+}")
+    public String setupAllNodesRequest(@PathVariable final String nodeType, @PathVariable final Double lamda) {
+        log.info("Set up requests for node type " + nodeType + " with lamda:" + lamda);
+        if (cacheService.generateRequestByClientType(nodeType,lamda))
+            return ResponseEntity.successEntityWithPayload("Successfully set up requests for nodes").toJSONString();
+        else
+            return ResponseEntity.retryableFailEntity("Failed to set up requests for nodes.").toJSONString();
+    }
+
+    @ResponseBody
     @RequestMapping(value = "/request/{nodeId}/arg/{lamda:.+}")
     public String setupNodeRequest(@PathVariable final String nodeId, @PathVariable final Double lamda) {
         log.info("Set up requests for node" + nodeId + " with lamda:" + lamda.toString());
@@ -92,5 +102,15 @@ public class SimulatorController {
         return cacheService.simuRequest(nodeId, videoId) ?
                 ResponseEntity.successEntityWithPayload("Success.").toJSONString() :
                 ResponseEntity.retryableFailEntity("Request failed.").toJSONString();
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/request/clean")
+    public String cleanAllNodesRequest() {
+        log.info("Clean up all nodes requests");
+        if (cacheService.cleanUpClientHistory())
+            return ResponseEntity.successEntityWithPayload("Successfully clean up all requests").toJSONString();
+        else
+            return ResponseEntity.retryableFailEntity("Failed to clean up all requests").toJSONString();
     }
 }

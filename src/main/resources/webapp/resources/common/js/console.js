@@ -24,6 +24,7 @@ function populateResourceList(data){
     var table = $('#resourceTableBody');
     var counters = node['counters'];
     var resourceMap = node['resourceMap'];
+    table.empty();
     for(var videoId in counters){
         var videoCount = counters[videoId];
         var caches = resourceMap[videoId];
