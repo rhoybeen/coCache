@@ -12,7 +12,9 @@
 
 <link href="/resources/common/css/console.css" rel="stylesheet">
 <link href="/resources/vis/vis.min.css" rel="stylesheet">
+<link href="/resources/bootstrap/jquery.dataTables.min.css" rel="stylesheet">
 
+<script src="/resources/bootstrap/jquery.dataTables.min.js"></script>
 <script src="/resources/vis/vis.min.js"></script>
 <script src="/resources/common/js/console.js"></script>
 
@@ -40,7 +42,7 @@
   </div>
 </nav>
 
-<div class="container-fluid">
+<div class="container-fluid" id="container">
     <div class="col-md-8 well">
         <h4>协作缓存节点</h4><hr>
         <table class="table table-striped" id="nodeTable">
@@ -95,16 +97,14 @@
                     资源列表
                 </div>
                 <div class="panel-body">
-                    <table class="table table-condensed" id='resourceTable'>
-                      <thead>
-                        <tr>
-                          <th>资源名</th>
-                          <th>请求数</th>
-                            <th>缓存情况</th>
-                        </tr>
-                      </thead>
-                      <tbody id='resourceTableBody'>
-                      </tbody>
+                    <table id="resourceDataTable" class="table table-condensed table-striped", width="100%">
+                        <thead>
+                            <tr>
+                              <th>资源名</th>
+                              <th>请求数</th>
+                              <th>缓存情况</th>
+                            </tr>
+                        </thead>
                     </table>
                 </div>
             </div>
@@ -114,17 +114,16 @@
                 <div class="panel-heading">
                     服务时延
                 </div>
-                <div class="panel-body">
-                    <table class="table table-condensed table-striped">
+                <div class="panel-body" id = "delayPanelBody">
+                    <table id = "delayMapTable" class="table table-condensed table-striped">
                         <thead>
                             <tr>
                               <th>协作节点</th>
+                              <th>节点类型</th>
+                              <th>容量</th>
                               <th>时延</th>
                             </tr>
                           </thead>
-                      <tbody>
-
-                      </tbody>
                     </table>
                     <div align="right"><button class="btn-info" onclick="updateDelays()">刷新</button></div>
                 </div>
@@ -135,13 +134,40 @@
                 <div class="panel-heading">
                     缓存控制
                 </div>
-                <div class="panel-body">
-                  <p><input type="radio"> 协作缓存 - 采用基于内容与节点偏好的CS匹配算法进行缓存更新。</p>
-                  <p><input type="radio"> 流行度缓存 - 协作缓存时不考虑节点与内容偏好，只根据内容流行度分配缓存。</p>
-                  <p><input type="radio"> 非协作缓存 - 各节点独立更新缓存内容，不与其它节点共享信息。</p>
-                  <div align="right"><button class="btn-info">评估</button> <button class="btn-success">更新</button></div>
-                  <font size="10" color="#66ff66">3201.2s</font>
-                  <p>预估整体服务时延</p>
+                <div class="panel-body" id="cachePanelBody">
+                  <p><input name="strategy" type="radio" value="GS" checked="checked"> GS协作缓存 - 采用基于内容与节点偏好的CS匹配算法进行缓存更新。</p>
+                  <p><input name="strategy" type="radio" value="POP_CO"> 流行度协作缓存 - 协作缓存时不考虑节点与内容偏好，根据节点内容流行度分配缓存。</p>
+                  <p><input name="strategy" type="radio" value="POP_NON_CO"> 流行度非协作缓存 - 协作缓存时不考虑节点与内容偏好，只根据当前节点内容流行度分配缓存。</p>
+                  <p><input name="strategy" type="radio" value="RAN_CO"> 随机协作缓存 - 各节点随机更新缓存内容，不与其它节点共享信息。</p>
+                  <div align="right"><button class="btn-info" onclick="evaluateStrategies()">评估</button>
+                  <button class="btn-success" onclick="updateCache()">更新</button></div>
+                  <hr>
+                  <table id = "cacheTable" class="table table-condensed table-striped">
+                      <thead>
+                          <tr>
+                            <th>缓存策略</th>
+                            <th>预估平均服务时延</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GS协作缓存</td>
+                                <td id="tdGSDelay"></td>
+                            </tr>
+                            <tr>
+                                <td>流行度协作缓存</td>
+                                <td id="tdPopDelay"></td>
+                            </tr>
+                            <tr>
+                                <td>流行度非协作缓存</td>
+                                <td id="tdPopNonDelay"></td>
+                            </tr>
+                            <tr>
+                                <td>随机协作缓存</td>
+                                <td id="tdRanDelay"></td>
+                            </tr>
+                        </tbody>
+                  </table>
                 </div>
             </div>
           </div>

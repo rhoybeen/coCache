@@ -29,7 +29,7 @@ public class ConsoleController {
     private static final String VIEW = "console";
 
     @RequestMapping
-    public ModelAndView getViewPage(Model model){
+    public ModelAndView getViewPage(Model model) {
         final ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName(VIEW);
         return modelAndView;
@@ -37,17 +37,19 @@ public class ConsoleController {
 
     /**
      * Get cache service detailed info.
+     *
      * @return
      */
     @ResponseBody
     @RequestMapping(value = "/info")
-    public String getInfo(){
+    public String getInfo() {
         log.info("Request cache service nodes info.");
         return ResponseEntity.successEntityWithPayload(cacheService).toJSONString();
     }
 
     /**
      * Bind client to cache service
+     *
      * @param params
      * @param request
      * @return
@@ -65,13 +67,14 @@ public class ConsoleController {
 
     /**
      * Sync with web client.
+     *
      * @param params
      * @param request
      * @return
      */
     @ResponseBody
     @RequestMapping(value = "/sync")
-    public String sync(@RequestBody String params, HttpServletRequest request){
+    public String sync(@RequestBody String params, HttpServletRequest request) {
         final String uri = request.getRemoteHost();
         final JSONObject jsonObject = JSONObject.parseObject(params);
         final String webClientStr = jsonObject.getString("params");
@@ -82,9 +85,9 @@ public class ConsoleController {
 
     @ResponseBody
     @RequestMapping(value = "/sync/{clientId}")
-    public String syncWithClient1(@PathVariable final String clientId){
+    public String syncWithClient1(@PathVariable final String clientId) {
         log.info("Sync with client 1");
-        if(cacheService.syncToWebClient1())
+        if (cacheService.syncToWebClient1())
             return ResponseEntity.successEntityWithPayload("Successfully sync with client 1").toJSONString();
         else
             return ResponseEntity.retryableFailEntity("Failed to sync with client 1").toJSONString();
@@ -92,7 +95,7 @@ public class ConsoleController {
 
     @ResponseBody
     @RequestMapping(value = "/unbind")
-    public String unbind(@RequestBody String params, HttpServletRequest request){
+    public String unbind(@RequestBody String params, HttpServletRequest request) {
         final String uri = request.getRemoteHost();
         final String clientId = params;
         log.info("Unbind client " + uri);
@@ -102,11 +105,12 @@ public class ConsoleController {
 
     /**
      * Get all web clients info in cache service.
+     *
      * @return
      */
     @ResponseBody
     @RequestMapping(value = "/nodes")
-    public String retrieveCoCacheNodes(){
+    public String retrieveCoCacheNodes() {
         log.info("Retrieve cocache system nodes.");
         final Set<WebClient> nodes = cacheService.retrieveCocacheNodes();
         final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(nodes);
@@ -115,50 +119,55 @@ public class ConsoleController {
 
     /**
      * Update system delay map.
+     *
      * @return
      */
     @ResponseBody
-    @RequestMapping( value = "/delays")
-    public String updateSystemDelays(){
+    @RequestMapping(value = "/delays")
+    public String updateSystemDelays() throws Exception {
         log.info("Update system delays.");
-        final Map<String, Map<String,Integer>> delayMap = cacheService.retrieveNetworkDelays();
+        final Map<String, Map<String, Double>> delayMap = cacheService.retrieveNetworkDelays();
         final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(delayMap);
+        Thread.sleep(1500);
         return responseEntity.toJSONString();
     }
 
     @ResponseBody
     @RequestMapping(value = "/cache/update/{strategy}")
-    public String updateCache(@PathVariable final String strategy){
+    public String updateCache(@PathVariable final String strategy) throws Exception {
         log.info("Update system cache by strategy:" + strategy);
-        final Map<String,Object> result = cacheService.updateCache(strategy);
+        Thread.sleep(2000);
+        final Map<String, Object> result = cacheService.updateCache(strategy);
         final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(result);
         return responseEntity.toJSONString();
     }
 
     @ResponseBody
     @RequestMapping(value = "/cache/evaluate")
-    public String evaluateCacheStrategies(){
+    public String evaluateCacheStrategies() throws Exception {
         log.info("Evaluate cache strategies.");
-        final Map<String,Object> result = cacheService.evaluateCacheStrategies();
+        Thread.sleep(2000);
+        final Map<String, Object> result = cacheService.evaluateCacheStrategies();
         final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(result);
         return responseEntity.toJSONString();
     }
 
     /**
      * Test function to be removed.
+     *
      * @return
      */
     //todo: it should be well returned.
     @ResponseBody
-    @RequestMapping( value = "/edge")
-    public String test(){
-        for(WebClient webClient: cacheService.webClientMap.values()){
+    @RequestMapping(value = "/edge")
+    public String test() {
+        for (WebClient webClient : cacheService.webClientMap.values()) {
             webClient.updateVideoList();
         }
-        TopoUtils.getSimuGraphDelays(cacheService.graph,cacheService.delayMap);
-        for(int i = 0;i<=15;i++){
-            for(int j=0;j<=15;j++){
-                System.out.print(String.valueOf((int)cacheService.delayMap[i][j]) + ' ');
+        TopoUtils.getSimuGraphDelays(cacheService.graph, cacheService.delayMap);
+        for (int i = 0; i <= 15; i++) {
+            for (int j = 0; j <= 15; j++) {
+                System.out.print(String.valueOf((int) cacheService.delayMap[i][j]) + ' ');
             }
             System.out.println();
         }

@@ -52,11 +52,23 @@ public class CacheService {
 
     /**
      * get delays among cache nodes.
-     *
+     * and returned modified delay to the front-end
      * @return
      */
-    public Map<String, Map<String, Integer>> retrieveNetworkDelays() {
-        return null;
+    public Map<String, Map<String, Double>> retrieveNetworkDelays() {
+        TopoUtils.getSimuGraphDelays(graph,delayMap);
+        final Map<String,Map<String,Double>> result = new HashMap<>();
+        for(WebClient webClient : webClientMap.values()){
+            final String id = webClient.getId();
+            final Map<String,Double> clientMap = new HashMap<>();
+            for(WebClient webClient1 : webClientMap.values()){
+                final String id1 = webClient1.getId();
+                double delay = delayMap[Integer.valueOf(id)][Integer.valueOf(id1)] + BASE_SERVICE_DELAY;
+                clientMap.put(id1,delay);
+            }
+            result.put(id,clientMap);
+        }
+        return result;
     }
 
     /**

@@ -16,34 +16,139 @@ function displayNodeInfo(nodeId){
         $("#nodeParentId").text(node['parentId']);
     }
     populateResourceList(node);
+    var delayMapData = $("#vis_network").data['delayMap'];
+    //populateDelayMap(delayMapData);
 }
 
 function populateResourceList(data){
     var node = data;
     var nodeId = node['id'];
-    var table = $('#resourceTableBody');
+    var table = $("#resourceDataTable").DataTable({
+       "destroy":     true,
+    });
+    var tableData = [];
     var counters = node['counters'];
     var resourceMap = node['resourceMap'];
-    table.empty();
+
     for(var videoId in counters){
+        var tableRow = [];
         var videoCount = counters[videoId];
         var caches = resourceMap[videoId];
-        var str = '<tr><td>' + videoId + '.mp4</td>';
-        var str = str + '<td>'+ videoCount + '</td>';
+        var str;
+        tableRow.push(videoId);
+        tableRow.push(videoCount);
         if(caches.length == 0){
-            str = str + '<td><span class="label label-danger">无缓存</span></td>';
+            str = '<span class="label label-danger">无缓存</span>';
         }else if(caches[0] == nodeId){
-            str = str + '<td><span class="label label-success">本地缓存</span></td>';
+            str = '<span class="label label-success">本地缓存</span>';
         }else{
-            str = str + '<td><span class="label label-info">协作缓存</span></td>';
+            str = '<span class="label label-info">协作缓存</span>';
         }
-        table.append(str);
+        tableRow.push(str);
+        tableData.push(tableRow);
     }
+    table.clear().draw();
+    table.rows.add(tableData).draw();
+}
 
+function populateDelayMap(data){
+        var currentNodeId = $("#nodeId").text();
+        var nodeMap = $('#vis_network').data['nodeMap'];
+        var delayMap = data;
+        var currentNodeDelayMap = delayMap[currentNodeId];
+        var table = $("#delayMapTable").DataTable({
+           "destroy": true,
+        });
+        var tableData = [];
+
+        for(var nodeId in currentNodeDelayMap){
+              var currentNode = nodeMap[nodeId];
+              var nodeType = currentNode['nodeType'];
+              var nodeName = currentNode['name'];
+              var capacity = currentNode['capacity'];
+              var delay = parseInt(currentNodeDelayMap[nodeId]);
+              var tableRow = [];
+              tableRow.push(nodeName);
+              tableRow.push(nodeType);
+              tableRow.push(capacity);
+              tableRow.push(delay + 'ms');
+              tableData.push(tableRow);
+        }
+        table.clear().draw();
+        table.rows.add(tableData).draw();
 }
 
 function updateDelays(){
+    $('#delayPanelBody').loading();
+    $.ajax({
+        url: '/console/delays',
+        success: function(data) {
+            var jsonObj = JSON.parse(data);
+            if (jsonObj['isSuccess']) {
+                var delayMap = jsonObj['payload'];
+                populateDelayMap(delayMap);
+                var netContainer = $('#vis_network');
+                netContainer.data['delayMap'] = delayMap;
+            }
+        },
+        error: function(data){
 
+        },
+        complete: function() {
+            setTimeout(function() {
+                  $('#delayPanelBody').loading('stop');
+            }, 500);
+        }
+    });
+}
+
+function evaluateStrategies(){
+        $('#cachePanelBody').loading();
+        $.ajax({
+            url: '/console/cache/evaluate',
+            success: function(data) {
+                var jsonObj = JSON.parse(data);
+                if (jsonObj['isSuccess']) {
+                    var delayMap = jsonObj['payload']['expectedDelay'];
+                    $("#tdGSDelay").text(delayMap['GS'].toFixed(2) + 'ms');
+                    $("#tdPopDelay").text(delayMap['POP_CO'].toFixed(2) + 'ms');
+                    $("#tdRanDelay").text(delayMap['RAN_CO'].toFixed(2) + 'ms');
+                    $("#tdPopNonDelay").text(delayMap['POP_NON_CO'].toFixed(2) + 'ms');
+                }
+            },
+            error: function(data){
+
+            },
+            complete: function() {
+                setTimeout(function() {
+                      $('#cachePanelBody').loading('stop');
+                }, 500);
+            }
+        });
+}
+
+function updateCache(){
+        $('#cachePanelBody').loading();
+        var strategy = $("input:checked").eq(0).val().trim();
+        $.ajax({
+            url: '/console/cache/update/' + strategy,
+            success: function(data) {
+                var jsonObj = JSON.parse(data);
+                if (jsonObj['isSuccess']) {
+                    var data = jsonObj['payload'];
+                    populateNetworkTopo();
+                }
+            },
+            error: function(data){
+
+            },
+            complete: function() {
+                setTimeout(function() {
+                      $('#cachePanelBody').loading('stop');
+                }, 500);
+                alert("成功更新系统缓存，点击各节点查看缓存情况。")
+            }
+        });
 }
 
 var nodes_json = {
@@ -174,7 +279,7 @@ function populateNetworkTopo(){
 
         },
         complete: function() {
-
+            updateDelays();
         }
     });
 }

@@ -2,6 +2,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <link href="/resources/bootstrap/bootstrap.min.css" rel="stylesheet">
+<link href="/resources/loading/jquery.loading.min.css" rel="stylesheet">
 
 <script src="/resources/jquery/jquery.min.js"></script>
 <script src="/resources/bootstrap/bootstrap.min.js"></script>
+<script src="/resources/loading/jquery.loading.min.js"></script>

@@ -362,6 +362,7 @@ public class CacheUtils {
             }
         }
         log.info("Total service delay:" + serviceDelay + " total/miss:" + count + "/" + missCount);
+        if(count <= 0) return 0;
         return serviceDelay / count;
     }
 }
