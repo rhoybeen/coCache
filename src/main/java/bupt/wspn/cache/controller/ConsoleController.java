@@ -143,6 +143,17 @@ public class ConsoleController {
     }
 
     @ResponseBody
+    @RequestMapping(value = "/cache/reset")
+    public String resetCache() throws Exception {
+        log.info("Reset system cache.");
+        Thread.sleep(1000);
+        if (cacheService.resetSystemCache())
+            return ResponseEntity.successEntityWithPayload("Successfully clean up all cache").toJSONString();
+        else
+            return ResponseEntity.retryableFailEntity("Failed to clean up all cache").toJSONString();
+    }
+
+    @ResponseBody
     @RequestMapping(value = "/cache/evaluate")
     public String evaluateCacheStrategies() throws Exception {
         log.info("Evaluate cache strategies.");

@@ -43,7 +43,7 @@
 </nav>
 
 <div class="container-fluid" id="container">
-    <div class="col-md-8 well">
+    <div class="col-md-8 well" id="divNodeInfo">
         <h4>协作缓存节点</h4><hr>
         <table class="table table-striped" id="nodeTable">
           <thead>
@@ -83,6 +83,10 @@
             </tr>
           </tbody>
         </table>
+          <div align="right">
+          <button class="btn-primary" onclick="initRequest()">初始化</button>
+          <button class="btn-info" onclick="resetCache()">重置缓存</button>
+          <button class="btn-success" onclick="resetRequest()">重置请求</button></div>
     </div>
     <div class="col-md-4" >
       <div class="well panel">

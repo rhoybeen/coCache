@@ -53,20 +53,21 @@ public class CacheService {
     /**
      * get delays among cache nodes.
      * and returned modified delay to the front-end
+     *
      * @return
      */
     public Map<String, Map<String, Double>> retrieveNetworkDelays() {
-        TopoUtils.getSimuGraphDelays(graph,delayMap);
-        final Map<String,Map<String,Double>> result = new HashMap<>();
-        for(WebClient webClient : webClientMap.values()){
+        TopoUtils.getSimuGraphDelays(graph, delayMap);
+        final Map<String, Map<String, Double>> result = new HashMap<>();
+        for (WebClient webClient : webClientMap.values()) {
             final String id = webClient.getId();
-            final Map<String,Double> clientMap = new HashMap<>();
-            for(WebClient webClient1 : webClientMap.values()){
+            final Map<String, Double> clientMap = new HashMap<>();
+            for (WebClient webClient1 : webClientMap.values()) {
                 final String id1 = webClient1.getId();
                 double delay = delayMap[Integer.valueOf(id)][Integer.valueOf(id1)] + BASE_SERVICE_DELAY;
-                clientMap.put(id1,delay);
+                clientMap.put(id1, delay);
             }
-            result.put(id,clientMap);
+            result.put(id, clientMap);
         }
         return result;
     }
@@ -110,7 +111,7 @@ public class CacheService {
         //Calculate expected average service delay.
         final Map<String, Double> expectedDelayMap = CacheUtils.calculateExpectedStrategyDelay(this);
         //Clean up history requests for all clients.
-        cleanUpClientHistory();
+        //cleanUpClientHistory();
         //Sync new resource map to client 1.
         syncToWebClient1();
         res.put("expectedDelay", expectedDelayMap);
@@ -120,7 +121,7 @@ public class CacheService {
         return res;
     }
 
-    public Map<String,Object> evaluateCacheStrategies(){
+    public Map<String, Object> evaluateCacheStrategies() {
         log.info("Evaluate cache strategies now.");
         final Map<String, Object> res = new HashMap<>();
         //Sync requests from every nodes
@@ -265,7 +266,7 @@ public class CacheService {
         final String ip = "simulator" + id;
         final String masterIp = "localhost";
         final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, RESOURCE_AMOUNT, masterIp);
-        webClient.initCountersAndResources(true);
+        webClient.initCountersAndResources(true, true);
         //todo: set up other variants in web client to avoid errors.
         log.info("Put web client id:" + id + "to webClient map");
         webClientMap.put(id, webClient);
@@ -290,8 +291,9 @@ public class CacheService {
             final String name = PropertyUtils.getProperty(webClientPrefix + "name");
             final String type = PropertyUtils.getProperty(webClientPrefix + "type");
             final String parentId = PropertyUtils.getProperty(webClientPrefix + "parentId");
+            final int pivot = Integer.valueOf(PropertyUtils.getProperty(webClientPrefix + "pivot"));
             log.info("Create webClient from property file with id" + id + " ip" + ip + " name" + name + " type" + type + " parentId" + parentId);
-            final WebClient webClient = createWebClient(id, name, type, ip, parentId);
+            final WebClient webClient = createWebClient(id, name, type, ip, parentId, pivot);
             if (Objects.isNull(webClient)) return false;
             this.webClientMap.put(id, webClient);
         }
@@ -313,7 +315,8 @@ public class CacheService {
                                      @NonNull final String name,
                                      @NonNull final String type,
                                      @NonNull final String ip,
-                                     @NonNull final String parentId) {
+                                     @NonNull final String parentId,
+                                     final int pivot) {
         if (webClientMap.containsKey(id)) {
             log.info("Webclient with id" + id + "already exist.");
             return null;
@@ -322,7 +325,9 @@ public class CacheService {
         final int capacity = Integer.valueOf(PropertyUtils.getProperty("slave." + type + ".capacity"));
         final int resourceAmount = Integer.valueOf(PropertyUtils.getProperty("slave.resourceAmount"));
         final String masterIp = PropertyUtils.getProperty("slave.masterIp");
-        return new WebClient(ip, id, nodeType, name, parentId, capacity, resourceAmount, masterIp);
+        final WebClient webClient = new WebClient(ip, id, nodeType, name, parentId, capacity, resourceAmount, masterIp);
+        webClient.setPivot(pivot);
+        return webClient;
     }
 
     public boolean delWebClient(final String nodeId) {
@@ -423,8 +428,8 @@ public class CacheService {
             log.info("No such webClient " + nodeId);
             return false;
         }
-        webClient.initCountersAndResources(false);
-        final List<String> requests = RequestUtils.getRequestId(lamda, true);
+        //    webClient.initCountersAndResources(true,false);
+        final List<String> requests = RequestUtils.getRequestId(lamda, webClient.getPivot());
         log.info("Generate request for node id: " + nodeId + " with number " + requests.size());
         for (String requestId : requests) {
             increaseResourceCount(webClient, requestId);
@@ -435,7 +440,14 @@ public class CacheService {
 
     public boolean cleanUpClientHistory() {
         for (WebClient webClient : webClientMap.values()) {
-            webClient.initCountersAndResources(false);
+            webClient.initCountersAndResources(true, false);
+        }
+        return true;
+    }
+
+    public boolean resetSystemCache() {
+        for (WebClient webClient : webClientMap.values()) {
+            webClient.initCountersAndResources(false, true);
         }
         return true;
     }

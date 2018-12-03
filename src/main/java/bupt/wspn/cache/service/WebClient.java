@@ -6,6 +6,7 @@ import bupt.wspn.cache.model.NodeType;
 import bupt.wspn.cache.model.RequestEntity;
 import bupt.wspn.cache.model.Video;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -58,6 +59,8 @@ public class WebClient {
     @Value("${slave.masterIp}")
     private String masterIp;
 
+    public transient int pivot;
+
     //Map indicating resources clicks.
     private Map<String, Integer> counters = new HashMap<String, Integer>();
     //Map indicating which node resources locate.
@@ -83,17 +86,17 @@ public class WebClient {
         this.capacity = capacity;
         this.resourceAmount = resourceAmount;
         this.masterIp = masterIp;
-        initCountersAndResources(true);
+        initCountersAndResources(true,true);
     }
 
     /**
      * Init counters and resourceMap
      */
-    public void initCountersAndResources(boolean initResources) {
+    public void initCountersAndResources(boolean initCounters, boolean initResources) {
         final int resourceSize = this.resourceAmount;
         for (int i = 1; i <= resourceSize; i++) {
             final String fileNameNum = FilenameConvertor.toStringName(i);
-            this.counters.put(fileNameNum, 0);
+            if(initCounters) this.counters.put(fileNameNum, 0);
             if(initResources) this.resourceMap.put(fileNameNum, new ArrayList<>());
         }
     }
@@ -191,6 +194,7 @@ public class WebClient {
     public void initWebClient() {
         log.info("WebClient init method.");
         final int resourceSize = resourceAmount;
+        this.pivot = 1;
         for (int i = 1; i <= resourceSize; i++) {
             final String fileNameNum = FilenameConvertor.toStringName(i);
             counters.put(fileNameNum, i);

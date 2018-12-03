@@ -16,8 +16,6 @@ function displayNodeInfo(nodeId){
         $("#nodeParentId").text(node['parentId']);
     }
     populateResourceList(node);
-    var delayMapData = $("#vis_network").data['delayMap'];
-    //populateDelayMap(delayMapData);
 }
 
 function populateResourceList(data){
@@ -149,6 +147,72 @@ function updateCache(){
                 alert("成功更新系统缓存，点击各节点查看缓存情况。")
             }
         });
+}
+
+function resetRequest(){
+        $('#divNodeInfo').loading();
+        $.ajax({
+            url: '/simu/request/clean',
+            success: function(data) {
+                var jsonObj = JSON.parse(data);
+                if (jsonObj['isSuccess']) {
+                    populateNetworkTopo();
+                }
+            },
+            error: function(data){
+
+            },
+            complete: function() {
+                setTimeout(function() {
+                      $('#divNodeInfo').loading('stop');
+                }, 500);
+                alert("成功清除历史请求记录！")
+            }
+        });
+}
+
+function resetCache(){
+        $('#divNodeInfo').loading();
+        $.ajax({
+            url: '/console/cache/reset',
+            success: function(data) {
+                var jsonObj = JSON.parse(data);
+                if (jsonObj['isSuccess']) {
+                    populateNetworkTopo();
+                }
+            },
+            error: function(data){
+
+            },
+            complete: function() {
+                setTimeout(function() {
+                      $('#divNodeInfo').loading('stop');
+                }, 500);
+                alert("成功清除系统历史缓存！")
+            }
+        });
+}
+
+function initRequest(){
+    $('#divNodeInfo').loading();
+    $.ajax({
+        url: '/simu/request/type/SBS_MEC/arg/0.7',
+        success: function(data) {
+            var jsonObj = JSON.parse(data);
+            if (jsonObj['isSuccess']) {
+                populateNetworkTopo();
+            }
+        },
+        error: function(data){
+
+        },
+        complete: function() {
+            setTimeout(function() {
+                  $('#divNodeInfo').loading('stop');
+            }, 500);
+            alert("成功初始化系统请求!");
+        }
+    });
 }
 
 var nodes_json = {
