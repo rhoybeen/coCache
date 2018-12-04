@@ -59,6 +59,10 @@ public class WebClient {
     @Value("${slave.masterIp}")
     private String masterIp;
 
+//    @JSONField(serialize = false)
+    @Value("${slave.remoteServerIp}")
+    private String remoteServerIp;
+
     public transient int pivot;
 
     //Map indicating resources clicks.
@@ -185,6 +189,16 @@ public class WebClient {
             log.warn("WebClient " + this.id + "fails to unbind from master server.");
             return false;
         }
+    }
+
+    public Map<String,Object> handleVideoRequest(@NonNull final String videoName){
+        final List<String> locations = resourceMap.get(videoName);
+        if(Objects.isNull(locations)) return null;
+        final Map<String,Object> result = new HashMap<>();
+        final int countBefore = counters.get(videoName);
+        counters.put(videoName,countBefore+1);
+        result.put("locations",locations);
+        return result;
     }
 
     /**

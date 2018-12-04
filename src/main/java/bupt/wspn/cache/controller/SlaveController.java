@@ -1,17 +1,21 @@
 package bupt.wspn.cache.controller;
 
+import bupt.wspn.cache.Utils.FilenameConvertor;
 import bupt.wspn.cache.model.ResponseEntity;
 import bupt.wspn.cache.service.WebClient;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * This controller defines operations for a slave node.
@@ -21,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping(value = "/slave")
 public class SlaveController {
     final private static String VIEW = "resource";
+    final private static String PLAY_VIEW = "play";
 
     @Autowired
     private WebClient webClient;
@@ -68,5 +73,21 @@ public class SlaveController {
         log.info("Sync from master cache server");
         final boolean res = webClient.sync(webClientStr);
         return String.valueOf(res);
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/play/{videoName}")
+    public ModelAndView handleVideoPlayRequest(@PathVariable String videoName){
+        log.info("Receiving request on video:" + videoName);
+        final String video = FilenameConvertor.toStringName(Integer.valueOf(videoName));
+        final Map<String , Object> result = webClient.handleVideoRequest(video);
+        final ModelAndView modelAndView = new ModelAndView(PLAY_VIEW);
+        if(Objects.nonNull(result)){
+            modelAndView.addAllObjects(result);
+            modelAndView.addObject("videoName",video);
+            return modelAndView;
+        }else {
+            return new ModelAndView("error");
+        }
     }
 }

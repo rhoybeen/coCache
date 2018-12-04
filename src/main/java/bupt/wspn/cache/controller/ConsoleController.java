@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -163,6 +164,17 @@ public class ConsoleController {
         return responseEntity.toJSONString();
     }
 
+    @ResponseBody
+    @RequestMapping(value = "/compare")
+    public String compareVideo() throws Exception {
+        log.info("Fetch data for video playing comparison.");
+        final Map<String, Object> result = new HashMap<>();
+        result.put("nodeMap",cacheService.webClientMap);
+        result.put("delayMap",cacheService.retrieveNetworkDelays());
+        final ResponseEntity responseEntity = ResponseEntity.successEntityWithPayload(result);
+        return responseEntity.toJSONString();
+    }
+
     /**
      * Test function to be removed.
      *
@@ -184,5 +196,4 @@ public class ConsoleController {
         }
         return cacheService.delayMap.toString();
     }
-
 }

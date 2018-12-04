@@ -8,6 +8,7 @@ function populateResourceGallery(){
         success: function(data) {
             var jsonObj = JSON.parse(data);
             if (jsonObj['isSuccess']) {
+                var canvas = $("#canvas");
                 var payload = jsonObj['payload']
                 var nodeId = payload['id'];
                 var videoList = payload['resources'];
@@ -17,6 +18,7 @@ function populateResourceGallery(){
                 var gallery = $("#gallery");
                 var chartLabels = [];
                 var charData = [];
+                canvas.data['nodeInfo'] = payload;
 
                 videoList.forEach(video => {
                     var videoName = video['name'];
@@ -27,10 +29,10 @@ function populateResourceGallery(){
                     charData.push(videoClicks);
 
                     var strDiv = '<div class="col-sm-6 col-md-4">';
-                    strDiv += '<div class="thumbnail">';
+                    strDiv += '<div class="thumbnail" >';
                     strDiv += '<img src="/resources/thumbnails/img'+ videoName + '.jpg" alt="1" width="100%">';
                     strDiv += '<div class="caption">';
-                    strDiv += '<h3>' + videoName + '.mp4</h3>';
+                    strDiv += '<h3><a href="/slave/play/' + videoName + '">' + videoName + '.mp4</a></h3>';
                     var cacheNode;
                     var cacheType;
                     if($.isEmptyObject(cachedNodes)){
@@ -93,4 +95,12 @@ function populateChart(videoNames, videoClicks){
             },
         }
     });
+}
+
+function requestVideo(videoName){
+    var nodeInfo = $("#canvas").data['nodeInfo'];
+    var resourceMap = nodeInfo['resourceMap'];
+    var cachedNodes = resourceMap[videoName];
+    var playStr = ""
+    window.location.href = "play/" + videoName;
 }
